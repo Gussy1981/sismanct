@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+    --background-color: #232b33;
+    --text-color: #ffffff;
+  }
+  
+  .my-icon-class {
+    border-radius: 0 !important;
+    border: none !important;
+    width: 300px !important;
+    height: 70px !important;
+  }
+  
+  body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+  
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 90%;
+    
+  }
+  
+  table, tr, th, td {
+    border: 3px solid #085385;
+    text-align: center;
+    
+  }
+
+  tr {
+    color: #088fc5;
+    
+  }
