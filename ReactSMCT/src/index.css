@@ -2,38 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
-    --background-color: #232b33;
-    --text-color: #ffffff;
-  }
-  
-  .my-icon-class {
-    border-radius: 0 !important;
-    border: none !important;
-    width: 300px !important;
-    height: 70px !important;
-  }
-  
-  body {
-    background-color: var(--background-color);
-    color: var(--text-color);
-  
-  }
+  --color-surface:       #1c1c1e;
+  --color-surface-card:  #2c2c2e;
+  --color-surface-input: #3a3a3c;
+  --color-border:        #52525b;
+  --color-primary:       #f97316;
+  --color-primary-hover: #ea6c0a;
+  --color-text:          #f4f4f5;
+  --color-text-muted:    #a1a1aa;
+}
 
-  table {
-    border-collapse: collapse;
-    width: 90%;
-    
-  }
-  
-  table, tr, th, td {
-    border: 3px solid #085385;
-    text-align: center;
-    
-  }
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
 
-  tr {
-    color: #088fc5;
-    
+/* ── Tablas (Bootstrap) ─────────────────────────────── */
+table {
+  border-collapse: collapse;
+  width: 90%;
+}
+
+table, tr, th, td {
+  border: 2px solid var(--color-primary);
+  text-align: center;
+}
+
+th {
+  background-color: #27272a;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.5rem;
+}
+
+td {
+  color: var(--color-text);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+tr:hover td {
+  background-color: #3f3f46;
+}
+
+/* ── Formulario global (clases reutilizables vía @layer) */
+@layer components {
+  .f-input {
+    @apply w-full bg-zinc-700 border border-zinc-600 text-zinc-100 rounded-md px-3 py-2 text-sm
+           focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors;
   }
+  .f-label {
+    @apply block text-zinc-400 text-xs font-medium mb-1 uppercase tracking-wide;
+  }
+  .f-error {
+    @apply text-red-400 text-xs mt-1;
+  }
+  .btn-primary {
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm;
+  }
+  .btn-secondary {
+    @apply bg-zinc-700 hover:bg-zinc-600 text-zinc-100 font-semibold py-2 px-4 rounded-md transition-colors text-sm;
+  }
+  .btn-danger {
+    @apply bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm;
+  }
+  .btn-success {
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm;
+  }
+  .card {
+    @apply bg-zinc-800 border border-zinc-700 rounded-xl p-5;
+  }
+}

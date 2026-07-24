@@ -17,12 +17,7 @@ const Preventivo = () => {
   useEffect(() => {
     const data = async () => {
       const tareasData = await getTareas();
-      console.log(tareasData.tasksToReturn);
-      if(tareasData.message === "No hay Tareas programadas") {
-        setTareas([]);
-      } else {
-        setTareas(tareasData.tasksToReturn);
-      };
+      setTareas(tareasData?.tasks ?? []);
     };
     data();
   }, []);

@@ -1,7 +1,10 @@
 // importar dependendias
+require("dotenv").config();
 const { connection } = require("./db/connection");
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const errorHandler = require("./middlewares/errorHandler");
 
 // conexion a bd
 console.log("Api Node para Mantenimiento Correcto");
@@ -9,7 +12,7 @@ connection ();
 
 // crear servidor node
 const app = express();
-const port = 3900;
+const port = process.env.PORT || 3900;
 
 // configurar cors
 app.use(cors());
@@ -32,6 +35,7 @@ const PedidoMant = require("./routes/pedidoMant"); // ruta pedido mantenimiento
 const Bitacora = require("./routes/bitacora"); // ruta bitacora
 const Pirometria = require("./routes/pirometria"); // ruta pirometria
 const PirometriaDone = require("./routes/pirometriaDone"); //ruta pirometriadone
+const MovimientoStock = require("./routes/movimientoStock"); // ruta movimientos de stock
 
 app.use("/api/user", UserRoutes);
 app.use("/api/equipo", EquiposRoutes);
@@ -46,6 +50,7 @@ app.use("/api/pedidomant", PedidoMant);
 app.use("/api/bitacora", Bitacora);
 app.use("/api/pirometria", Pirometria);
 app.use("/api/pirometriadone", PirometriaDone);
+app.use("/api/movimientostock", MovimientoStock);
 
 // ruta de prueba
 app.get("/ruta-prueba", (req, res) => {
@@ -56,6 +61,17 @@ app.get("/ruta-prueba", (req, res) => {
         }
     );
 } )
+
+// servir el build de React (ReactSMCT/dist) para que todo el sistema
+// (API + frontend) quede disponible desde un único puerto en la red local
+const frontendPath = path.join(__dirname, "ReactSMCT", "dist");
+app.use(express.static(frontendPath));
+app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+// middleware de errores centralizado (debe ir al final, después de todas las rutas)
+app.use(errorHandler);
 
 // poner servidor a escuchar peticiones http
 app.listen(port, () => {

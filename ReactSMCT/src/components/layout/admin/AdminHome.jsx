@@ -3,6 +3,7 @@ import PedidoMant from "./pedidosMant";
 import ListadoTaskNotDone from "../../listados/listadoTaskNotDone";
 import ListadoRepuestosEnFalta from "../../listados/listadoRepuestosEnFalta";
 import ListadoVerificarPiro from "../../listados/listadoVerificarPiro";
+import KPIsMantenimiento from "../../graficos/KPIsMantenimiento";
 
 const AdminHome = () => {
   return (
@@ -24,8 +25,13 @@ const AdminHome = () => {
       </div>
 
       <div className="w-[90%] mx-auto rounded-lg border-4 border-cyan-800 p-4 mt-4">
-      <h1 className="text-center h4">Indicadores de Mantenimiento</h1> 
+      <h1 className="text-center h4">Indicadores de Mantenimiento</h1>
         <ListadoTaskNotDone/>
+      </div>
+
+      <div className="w-[90%] mx-auto rounded-lg border-4 border-cyan-800 p-4 mt-4 mb-8">
+      <h1 className="text-center h4">KPIs de Mantenimiento Correctivo</h1>
+        <KPIsMantenimiento />
       </div>
       </div>
     </>

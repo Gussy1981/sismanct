@@ -37,7 +37,7 @@ const register = (req, res) => {
         });
         if (users && users.length >= 1) {
             return res.status(200).send({
-                status: "Succes",
+                status: "Success",
                 message: "El Usuario ya existe"
             })
         }
@@ -57,7 +57,7 @@ const register = (req, res) => {
 
             //devolver resultado
             return res.status(200).json({
-                status: "Succes",
+                status: "Success",
                 message: "Usuario registrado correctamente",
                 user: userStored
             });
@@ -102,7 +102,7 @@ const login = (req, res) => {
             // Devolver datos del usuario
 
             return res.status(200).send({
-                status: "Succes",
+                status: "Success",
                 message: "Te has identificado correctamente",
                 user: {
                     id: user._id,
@@ -130,7 +130,7 @@ const profile = (req, res) => {
             }
             //devolver resultado
             return res.status(200).send({
-                status: "Succes",
+                status: "Success",
                 message: "Usuario encontrado",
                 user: userProfile
             });
@@ -143,10 +143,10 @@ const profile = (req, res) => {
 const listAll = async (req, res, next) => {
     console.log(req.query);
     try {
-        let users = await User.find({});
-                                 
+        let users = await User.find({}).select({ dni: 0 });
+
         res.json({
-            status: "Succes",
+            status: "Success",
             message: "Listado Completo correcto",
             users
         })
@@ -163,14 +163,19 @@ const listAll = async (req, res, next) => {
 //Metodo para modificar registros
 const update = async (req, res, next) => {
     try {
-        let user = await User.updateOne({ _id: req.params.id }, req.body);
-             res.status(200).send({
-                status: "Succes",
-                message: "Usuario Modificado Correctamente",
-                user: user
-            });
-        
-        console.log("Despues de guardar usuario", user);
+        const { name, surname, role, dni } = req.body;
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (surname !== undefined) updateData.surname = surname;
+        if (role !== undefined) updateData.role = role;
+        if (dni) updateData.dni = await bcrypt.hash(dni, 10);
+
+        let user = await User.updateOne({ _id: req.params.id }, updateData);
+        res.status(200).send({
+            status: "Success",
+            message: "Usuario Modificado Correctamente",
+            user: user
+        });
     } catch (error) {
         res.send({
             status: "Error",
@@ -185,7 +190,7 @@ const deleteUser = async (req, res, next) => {
     try {
         let user = await User.deleteOne({ _id: req.params.id })
         return res.status(200).send({
-            status: "Succes",
+            status: "Success",
             message: "Registro Eliminado",
             user
         });

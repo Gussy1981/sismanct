@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { DataTable } from "mantine-datatable";
 import Swal from "sweetalert2";
 import { Global } from "../../helpers/Global";
-import { Table } from "react-bootstrap";
 import { DateTime } from "luxon";
 
 const TareasNoCumplidas = ({ tareas, onComplete }) => {
@@ -9,34 +9,29 @@ const TareasNoCumplidas = ({ tareas, onComplete }) => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    console.log(tareas);
-    setNoTareas(tareas); // Seteo el estado con lo que recibo de TareasByEquipo
+    setNoTareas(tareas);
     Swal.fire({
       title: "Tienes tareas no cumplidas, debes justificar los motivos",
       icon: "warning",
       confirmButtonText: "Aceptar",
     });
-  }, [tareas]); // Se ejecuta cada vez que haya un cambio en la prop.
-
-  console.log(noTareas);
+  }, [tareas]);
 
   if (noTareas.length === 0) {
-    Swal.fire("Gracias", "Justificaste todas las tareas", "success").then(
-      () => {
-        onComplete([]); // Al justificar las tareas, mando el array vacio a tareasbyequipo con la funcion de la prop
-      }
-    );
+    Swal.fire("Gracias", "Justificaste todas las tareas", "success").then(() => {
+      onComplete([]);
+    });
   }
 
   const handleButtonClick = (tarea) => {
     Swal.fire({
-      title: "¿Por que no realizaste la tarea?",
+      title: "¿Por qué no realizaste la tarea?",
       html:
         '<select id="razon" class="swal2-select">' +
         '<option value="No tuve tiempo">No tuve tiempo</option>' +
-        '<option value="Me olvide">Me olvide</option>' +
-        '<option value="No tenia herramientas">No tenia herramientas</option>' +
-        '<option value="Necesitaba repuestos que no habia">Necesitaba repuestos que no habia</option>' +
+        '<option value="Me olvide">Me olvidé</option>' +
+        '<option value="No tenia herramientas">No tenía herramientas</option>' +
+        '<option value="Necesitaba repuestos que no habia">Necesitaba repuestos que no había</option>' +
         '<option value="No era prioridad">No era prioridad</option>' +
         "</select>",
       showCancelButton: true,
@@ -46,85 +41,47 @@ const TareasNoCumplidas = ({ tareas, onComplete }) => {
       allowEscapeKey: false,
       preConfirm: () => {
         const motivo = document.getElementById("razon").value;
-        if (!motivo) {
-          Swal.showValidationMessage("Debes ingresar un motivo");
-        }
-        return { motivo: motivo };
+        if (!motivo) Swal.showValidationMessage("Debes ingresar un motivo");
+        return { motivo };
       },
     }).then((result) => {
       if (result.isConfirmed) {
-        console.log(token);
-        const motivo = result.value.motivo;
-        // Envio el valor de motivo a noTaskDone
         fetch(Global.url + `tasknotdone/update/${tarea._id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
-          body: JSON.stringify({
-            motivo: JSON.stringify(motivo),
-            motivoEstado: true,
-          }),
+          headers: { "Content-Type": "application/json", Authorization: token },
+          body: JSON.stringify({ motivo: result.value.motivo, motivoEstado: true }),
         })
           .then((res) => res.json())
-          .then((data) => {
-            console.log(data);
-            setNoTareas((prevTareas) =>
-              prevTareas.filter((prevTarea) => prevTarea._id !== tarea._id)
-            );
-
-            console.log(noTareas);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+          .then(() => setNoTareas((prev) => prev.filter((t) => t._id !== tarea._id)))
+          .catch(console.log);
       }
     });
   };
 
+  const columns = [
+    { accessor: "task.equipo",    title: "Equipo" },
+    { accessor: "task.tarea",     title: "Descripción" },
+    { accessor: "task.frecuencia", title: "Frecuencia" },
+    {
+      accessor: "fechaDone", title: "Fecha",
+      render: ({ fechaDone }) => DateTime.fromISO(fechaDone).toFormat("dd-MM-yyyy"),
+    },
+    {
+      accessor: "accion", title: "", textAlign: "center",
+      render: (tarea) => (
+        <button className="btn-success text-xs py-1 px-3" onClick={() => handleButtonClick(tarea)}>
+          Ingresar motivo
+        </button>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="text-lg font-medium mb-4 text-center">
-        {" "}
-        TAREAS NO CUMPLIDAS{" "}
-      </div>
-      <div className="pt-4">
-        <Table hover variant="dark">
-          <thead>
-            <tr>
-              <th>Equipo</th>
-              <th>Descripcion</th>
-              <th>Frecuencia</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {noTareas.map((tarea) => {
-              const fechaFormateada = DateTime.fromISO(
-                tarea.fechaDone
-              ).toFormat("dd-MM-yyyy");
-              return (
-                <tr key={tarea._id}>
-                  <td>{tarea.task.equipo}</td>
-                  <td>{tarea.task.tarea}</td>
-                  <td>{tarea.task.frecuencia}</td>
-                  <td>{fechaFormateada}</td>
-                  <td>
-                    <button
-                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-                      onClick={() => handleButtonClick(tarea)}
-                    >
-                      Ingresar Motivo
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
+      <p className="text-lg font-semibold text-center mb-4 uppercase tracking-wide text-orange-400">
+        Tareas no cumplidas
+      </p>
+      <DataTable columns={columns} records={noTareas} withTableBorder borderRadius="sm" striped highlightOnHover minHeight={150} noRecordsText="Sin tareas pendientes" />
     </>
   );
 };

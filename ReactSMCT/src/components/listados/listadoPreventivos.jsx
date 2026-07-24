@@ -1,87 +1,77 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getTareasPreventivo, deleteTareas, updateFechaConsulta } from "../configuracion/api";
-import { Table } from "react-bootstrap";
+import { DataTable } from "mantine-datatable";
 import FormTaskToDo from "../forms/FormTaskToDo";
 import Preventivo from "../layout/public/Preventivo";
 import Swal from "sweetalert2";
-import { MdDelete, MdEditDocument, MdPlayCircle, MdStopCircle} from "react-icons/md";
+import { MdDelete, MdEditDocument, MdPlayCircle, MdStopCircle } from "react-icons/md";
 
 const listadoPreventivos = () => {
-  const [taskToDo, setTaskToDo] = useState([]); //Estado que recibe la petición de la API
-  const [selection, setSelection] = useState(false); //Estado para mostrar listado o formulario de edicion
-  const [mode, setMode] = useState(""); // Estado para cambiar leyenda de Boton
-  const [taskToModify, setTaskToModify] = useState(""); // Estado para enviar la tarea a modificar en el form
-  const [menuOption, setMenuOption] = useState("Ver"); //Estado para setear Menu
+  const [taskToDo, setTaskToDo] = useState([]);
+  const [selection, setSelection] = useState(false);
+  const [mode, setMode] = useState("");
+  const [taskToModify, setTaskToModify] = useState("");
+  const [menuOption, setMenuOption] = useState("Ver");
 
   const data = async () => {
     const taskToDoData = await getTareasPreventivo();
-    console.log(taskToDoData);
-    const sortedByEquipo = taskToDoData.tareas.sort((a, b) =>
-      a.equipo.localeCompare(b.equipo)
-    );
-    setTaskToDo({ equipo: sortedByEquipo });
+    const sorted = taskToDoData.tareas.sort((a, b) => a.equipo.localeCompare(b.equipo));
+    setTaskToDo(sorted);
   };
 
-  useEffect(() => {
-    data();
-  }, []);
+  useEffect(() => { data(); }, []);
 
-  const handleChange = (equipo) => {
-    console.log(equipo);
-    setSelection(true);
-    setMode("Edit");
-    setTaskToModify(equipo);
-    console.log(menuOption);
-  };
+  const handleChange = (equipo) => { setSelection(true); setMode("Edit"); setTaskToModify(equipo); };
+  const updateTaskList = () => data();
+  const updateOk = () => { setSelection(false); setMode(""); };
+  const handleSetOption = (setter) => { setMenuOption(setter); setMode(""); };
+  const handleEdit = async (equipoId) => { await updateFechaConsulta(equipoId); await data(); };
 
   const handleDelete = (equipoId, codigo, tarea) => {
     Swal.fire({
-      title: `¿Estás seguro que quieres eliminar la Tarea ${tarea} en el equipo ${codigo}?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Eliminar",
-      cancelButtonText: "Cancelar",
+      title: `¿Estás seguro que querés eliminar la tarea ${tarea} del equipo ${codigo}?`,
+      icon: "warning", showCancelButton: true,
+      confirmButtonText: "Eliminar", cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
         deleteTareas(equipoId)
           .then((response) => {
-            if (response.data.status === "Succes") {
-              Swal.fire("¡Preventivo eliminado!", "", "success");
-              data(); // Actualiza la lista de equipos después de la eliminación
-            } else {
-              Swal.fire("Error", response.message, "error");
-            }
+            if (response.data.status === "Success") { Swal.fire("¡Preventivo eliminado!", "", "success"); data(); }
+            else Swal.fire("Error", response.data.message, "error");
           })
-          .catch((error) => {
-            console.error(error);
-            Swal.fire(
-              "Error",
-              "Hubo un problema al eliminar el preventivo",
-              "error"
-            );
-          });
+          .catch(() => Swal.fire("Error", "Hubo un problema al eliminar el preventivo", "error"));
       }
     });
   };
 
-  const updateTaskList = () => {
-    data();
-  };
-
-  const updateOk = () => {
-    setSelection(false);
-    setMode("");
-  };
-
-  const handleSetOption = (setter) => {
-    setMenuOption(setter);
-    setMode("");
-  };
-
-  const handleEdit = async (equipoId) => {
-    await updateFechaConsulta(equipoId);
-    await data();
-  }
+  const columns = [
+    { accessor: "equipo",    title: "Equipo" },
+    { accessor: "tarea",     title: "Tarea" },
+    { accessor: "encargado", title: "Encargado" },
+    { accessor: "frecuencia", title: "Frecuencia" },
+    {
+      accessor: "acciones", title: "", textAlign: "center",
+      render: (equipo) => (
+        <div className="flex justify-center gap-3">
+          <button className="text-yellow-400 hover:text-yellow-300 text-xl transition-colors" title="Modificar" onClick={() => handleChange(equipo)}>
+            <MdEditDocument />
+          </button>
+          <button className="text-red-500 hover:text-red-400 text-xl transition-colors" title="Eliminar" onClick={() => handleDelete(equipo._id, equipo.equipo, equipo.tarea)}>
+            <MdDelete />
+          </button>
+          {equipo.fechaConsulta === null ? (
+            <button className="text-green-500 hover:text-green-400 text-xl transition-colors" title="Iniciar" onClick={() => handleEdit(equipo._id)}>
+              <MdPlayCircle />
+            </button>
+          ) : (
+            <button className="text-red-500 hover:text-red-400 text-xl transition-colors" title="Detener" onClick={() => handleEdit(equipo._id)}>
+              <MdStopCircle />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   const renderContent = () => {
     switch (menuOption) {
@@ -89,123 +79,32 @@ const listadoPreventivos = () => {
         return <Preventivo />;
       case "List":
         return !selection ? (
-          <div className="pt-4">
-            <Table hover variant="dark">
-              <thead>
-                <tr>
-                  <th>Equipo</th>
-                  <th>Tarea</th>
-                  <th>Encargado</th>
-                  <th>Frecuencia</th>
-                  <th>Modificar</th>
-                  <th>Eliminar</th>
-                  <th>Iniciar/Detener</th>
-                </tr>
-              </thead>
-              <tbody>
-                {taskToDo.equipo &&
-                  taskToDo.equipo.map((equipo) => {
-                    return (
-                      <tr key={equipo._id}>
-                        <td>{equipo.equipo}</td>
-                        <td>{equipo.tarea}</td>
-                        <td>{equipo.encargado}</td>
-                        <td>{equipo.frecuencia}</td>
-                        <td>
-                          <button
-                            className=" text-yellow-600 font-bold h5"
-                            onClick={() => handleChange(equipo)}
-                          >
-                            <MdEditDocument />
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            className=" text-purple-600 font-bold h5"
-                            onClick={() =>
-                              handleDelete(
-                                equipo._id,
-                                equipo.equipo,
-                                equipo.tarea
-                              )
-                            }
-                          >
-                            <MdDelete />
-                          </button>
-                        </td>
-                        <td>
-                          {equipo.fechaConsulta === null ? (
-                            <button
-                            className=" text-green-600 font-bold h5"
-                            onClick={() => handleEdit(equipo._id)}
-                          >
-                            <MdPlayCircle />
-                          </button>
-                          ):(
-                            <button
-                            className=" text-red-600 font-bold h5"
-                            onClick={() => handleEdit(equipo._id)}
-                          >
-                            <MdStopCircle />
-                          </button>
-                          )
-                          }
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </Table>
-          </div>
+          <DataTable columns={columns} records={taskToDo} withTableBorder borderRadius="sm" striped highlightOnHover minHeight={150} noRecordsText="No hay tareas preventivas registradas" />
         ) : (
-          <FormTaskToDo
-            mode={mode}
-            taskToModify={taskToModify}
-            updateTaskList={updateTaskList}
-            updateOk={updateOk}
-          />
+          <FormTaskToDo mode={mode} taskToModify={taskToModify} updateTaskList={updateTaskList} updateOk={updateOk} />
         );
       case "Add":
         return <FormTaskToDo mode={menuOption} />;
     }
   };
 
-  console.log(taskToDo.equipo);
-
   return (
     <>
-      <div className="flex justify-center items-center text-center h4 py-4">
+      <p className="flex justify-center items-center text-center font-semibold text-lg py-4">
         Gestión de Mantenimiento Preventivo
-      </div>
-      <div className="flex text-center space-x-4 pb-4 px-3">
-        <button
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleSetOption("Ver")}
-          disabled={mode === "Edit"}
-        >
+      </p>
+      <div className="flex gap-3 pb-4 px-3">
+        <button className="btn-primary" onClick={() => handleSetOption("Ver")} disabled={mode === "Edit"}>
           Ver Preventivo
         </button>
-        <button
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-          onClick={() => {
-            if (mode === "Edit") {
-              updateOk();
-            } else {
-              handleSetOption("List");
-            }
-          }}
-        >
+        <button className="btn-secondary" onClick={() => { if (mode === "Edit") updateOk(); else handleSetOption("List"); }}>
           {mode === "Edit" ? "Volver al Listado" : "Modificar Preventivo"}
         </button>
-        <button
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleSetOption("Add")}
-          disabled={mode === "Edit"}
-        >
+        <button className="btn-success" onClick={() => handleSetOption("Add")} disabled={mode === "Edit"}>
           Agregar Preventivo
         </button>
       </div>
-      {renderContent()};
+      {renderContent()}
     </>
   );
 };

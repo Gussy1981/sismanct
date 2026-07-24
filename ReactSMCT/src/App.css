@@ -1,18 +1,8 @@
-
-:root {
-  --background-color: #708090;
-  --text-color: #ffffff;
-}
+/* App-level overrides — la mayor parte del estilo está en index.css */
 
 .my-icon-class {
   border-radius: 0 !important;
   border: none !important;
   width: 300px !important;
   height: 70px !important;
-}
-
-body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-
 }

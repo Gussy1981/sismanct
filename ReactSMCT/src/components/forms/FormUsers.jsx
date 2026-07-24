@@ -1,63 +1,38 @@
-import React from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Container, Row, Col, FormGroup } from "react-bootstrap";
 import { saveUsers, updateUser } from "../configuracion/api";
 import Swal from "sweetalert2";
 
 const FormUser = ({ mode, user, updateUserList, updateOk }) => {
-
-  console.log(mode, user);
-
   const initialValues = {
-    name: "",
-    surname: "",
-    dni: "",
-    role: "Empleado",
+    name:     mode === "Edit" ? user?.name    ?? "" : "",
+    surname:  mode === "Edit" ? user?.surname ?? "" : "",
+    dni:      "",
+    role:     mode === "Edit" ? user?.role    ?? "Empleado" : "Empleado",
   };
 
-  if (mode === "Edit" && user) {
-    initialValues.name = user.name || "";
-    initialValues.surname = user.surname || "";
-    initialValues.dni = user.dni;
-    initialValues.role = user.role || "Empleado";
-  }
-
   const validationSchema = Yup.object({
-    name: Yup.string().required("El nombre es obligatorio"),
+    name:    Yup.string().required("El nombre es obligatorio"),
     surname: Yup.string(),
-    dni:
-      mode !== "Edit"
-        ? Yup.string().required("El DNI es obligatorio")
-        : Yup.string(),
-    role: Yup.string().required("El rol es obligatorio"),
+    dni:     mode !== "Edit" ? Yup.string().required("El DNI es obligatorio") : Yup.string(),
+    role:    Yup.string().required("El rol es obligatorio"),
   });
 
   const handleSubmit = async (values, { resetForm }) => {
-    console.log("Valores enviados:", values);
     try {
-      let response;
+      const payload = { name: values.name, surname: values.surname, role: values.role };
+      if (mode !== "Edit" || values.dni) payload.dni = values.dni;
 
-      if (mode === "Edit") {
-        response = await updateUser(user._id, values);
-        updateOk();
+      const response = mode === "Edit"
+        ? await updateUser(user._id, payload)
+        : await saveUsers(payload);
 
-      } else {
-        response = await saveUsers(values);
-      }
-      console.log(response);
+      if (mode === "Edit") updateOk();
 
       if (response) {
-        await Swal.fire({
-          icon: "success",
-          title: "La operación fue exitosa",
-          showConfirmButton: false,
-          timer: 1500,
-        });
+        await Swal.fire({ icon: "success", title: "Operación exitosa", showConfirmButton: false, timer: 1500 });
         resetForm();
         updateUserList();
-      } else {
-        console.error("Error al guardar registro:", response);
       }
     } catch (error) {
       console.log(error);
@@ -65,75 +40,45 @@ const FormUser = ({ mode, user, updateUserList, updateOk }) => {
   };
 
   return (
-    <Container>
-      <Formik
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
-        <Form>
-          <Row>
-            <Col>
-              <FormGroup>
-                <label htmlFor="name">Nombre</label>
-                <Field
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="form-control"
-                />
-                <ErrorMessage
-                  name="name"
-                  component="div"
-                  className="text-danger"
-                />
-              </FormGroup>
-            </Col>
-            <Col>
-              <FormGroup>
-                <label htmlFor="surname">Apellido</label>
-                <Field
-                  type="text"
-                  id="surname"
-                  name="surname"
-                  className="form-control"
-                />
-                <ErrorMessage
-                  name="surname"
-                  component="div"
-                  className="text-danger"
-                />
-              </FormGroup>
-            </Col>
-          </Row>
-          <FormGroup>
-            <label htmlFor="dni">DNI</label>
-            <Field
-              type="text"
-              id="dni"
-              name="dni"
-              className="form-control"
-              disabled={mode === "Edit"}
-            />
-            <ErrorMessage name="dni" component="div" className="text-danger" />
-          </FormGroup>
-          <FormGroup>
-            <label htmlFor="role">Rol</label>
-            <Field as="select" id="role" name="role" className="form-control">
-              <option value="Empleado">Empleado</option>
-              <option value="Administrador">Administrador</option>
-            </Field>
-            <ErrorMessage name="role" component="div" className="text-danger" />
-          </FormGroup>
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
+    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
+      <Form className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="name" className="f-label">Nombre</label>
+            <Field type="text" id="name" name="name" className="f-input" />
+            <ErrorMessage name="name" component="p" className="f-error" />
+          </div>
+          <div>
+            <label htmlFor="surname" className="f-label">Apellido</label>
+            <Field type="text" id="surname" name="surname" className="f-input" />
+            <ErrorMessage name="surname" component="p" className="f-error" />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="dni" className="f-label">
+            {mode === "Edit" ? "Restablecer contraseña (DNI)" : "DNI"}
+          </label>
+          <Field type="text" id="dni" name="dni" className="f-input" />
+          <ErrorMessage name="dni" component="p" className="f-error" />
+          {mode === "Edit" && (
+            <p className="text-zinc-500 text-xs mt-1">Dejar en blanco para no modificar la contraseña actual.</p>
+          )}
+        </div>
+        <div>
+          <label htmlFor="role" className="f-label">Rol</label>
+          <Field as="select" id="role" name="role" className="f-input">
+            <option value="Empleado">Empleado</option>
+            <option value="Administrador">Administrador</option>
+          </Field>
+          <ErrorMessage name="role" component="p" className="f-error" />
+        </div>
+        <div>
+          <button type="submit" className="btn-primary">
             {mode === "Edit" ? "Modificar" : "Guardar"}
           </button>
-        </Form>
-      </Formik>
-    </Container>
+        </div>
+      </Form>
+    </Formik>
   );
 };
 

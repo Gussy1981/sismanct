@@ -2,7 +2,9 @@ const {Schema, model} = require("mongoose");
 
 const RepuestoSchema = Schema({
     nombre: {
-        type: String
+        type: String,
+        unique: true,
+        required: true
     },
     marca: String,
     tipo: String,
@@ -14,6 +16,11 @@ const RepuestoSchema = Schema({
     minStock: {
         type: Number,
         min: 1,
+    },
+    criticidad: {
+        type: String,
+        enum: ["Critico", "Normal"],
+        default: "Normal",
     },
     equipo: String,
     precio: Number,

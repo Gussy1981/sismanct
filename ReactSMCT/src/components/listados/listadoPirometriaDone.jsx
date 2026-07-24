@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getOneEquipo, getPiroDone } from "../configuracion/api";
-import { Table } from "react-bootstrap";
+import { DataTable } from "mantine-datatable";
 import { MdArchive } from "react-icons/md";
 import exportToPDF from "../ExportToPDF/exportToPDF";
 import { DateTime } from "luxon";
@@ -11,87 +11,54 @@ const listadoPirometriaDone = () => {
 
   const data = async () => {
     const response = await getPiroDone();
-    //verificar si los datos son un array antes de filtrar
     if (Array.isArray(response.registros)) {
-      const data = response.registros;
-      //filtro los registros que no tienen la propiedad resultado como null
-      const registros = data.filter((registros) => registros.resultado);
-      console.log(registros);
-      setPiroDone(registros);
-    } else {
-      console.error("Los datos no son un array");
+      setPiroDone(response.registros.filter((r) => r.resultado));
     }
   };
 
-  useEffect(() => {
-    data();
-  }, []);
+  useEffect(() => { data(); }, []);
 
   const handleExportToPDF = async (item) => {
     const equipoInfoArray = await getOneEquipo(item.equipo);
-    const equipoInfo = equipoInfoArray.equipo[0];
-    exportToPDF(item, equipoInfo);
+    exportToPDF(item, equipoInfoArray.equipo[0]);
   };
-  console.log("Listado PiroDone", piroDone);
 
   const filteredRecords = useMemo(
-    () =>
-      piroDone.filter((item) =>
-        item.equipo.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
+    () => piroDone.filter((item) => item.equipo.toLowerCase().includes(searchTerm.toLowerCase())),
     [piroDone, searchTerm]
   );
 
+  const columns = [
+    { accessor: "equipo",      title: "Equipo" },
+    {
+      accessor: "fechaControl", title: "Fecha",
+      render: ({ fechaControl }) => DateTime.fromISO(fechaControl).toFormat("dd-MM-yyyy"),
+    },
+    { accessor: "responsable", title: "Responsable" },
+    { accessor: "resultado",   title: "Resultado" },
+    {
+      accessor: "pdf", title: "", textAlign: "center",
+      render: (item) => (
+        <button className="text-yellow-400 hover:text-yellow-300 text-xl transition-colors" title="Descargar registro" onClick={() => handleExportToPDF(item)}>
+          <MdArchive />
+        </button>
+      ),
+    },
+  ];
+
   return (
     <>
-      <div className="pb-2 pl-3 pt-4 flex items-center">
-      <h1 className="mr-2 text-xl text-orange-500">Buscador por equipo:</h1>
-      <input
+      <div className="pb-4 pt-4 flex items-center gap-3 px-1">
+        <span className="text-orange-400 font-semibold">Buscar por equipo:</span>
+        <input
           type="text"
           placeholder="Ingrese el equipo"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className=" text-white w-[30%] bg-slate-600 rounded pl-2"
+          className="f-input w-64"
         />
-        </div>
-      <div className="pt-2">
-        <Table hover variant="dark">
-          <thead>
-            <tr>
-              <td>Equipo</td>
-              <td>Fecha</td>
-              <td>Responsable</td>
-              <td>Resultado</td>
-              <td>Descargar registro</td>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRecords &&
-              filteredRecords.map((item) => {
-                const fechaFormateada = DateTime.fromISO(
-                  item.fechaControl
-                ).toFormat("dd-MM-yyyy");
-                return (
-                  <tr key={item._id}>
-                    <td>{item.equipo}</td>
-                    <td>{fechaFormateada}</td>
-                    <td>{item.responsable}</td>
-                    <td>{item.resultado}</td>
-                    <td>
-                      <button
-                        className=" text-yellow-600 font-bold h5"
-                        onClick={() => handleExportToPDF(item)}
-                      >
-                        <MdArchive />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            <tr></tr>
-          </tbody>
-        </Table>
       </div>
+      <DataTable columns={columns} records={filteredRecords} withTableBorder borderRadius="sm" striped highlightOnHover minHeight={150} noRecordsText="No hay registros" />
     </>
   );
 };

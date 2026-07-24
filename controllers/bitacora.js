@@ -90,30 +90,10 @@ const listById = async (req, res, next) => {
     }
 }
 
-//Metodo para eliminar registros
-const deleteBitacora = async (req, res, next) => {
-    try {
-      let bitacora = await Bitacora.deleteOne({ _id: req.params.id });
-      return res.status(200).send({
-        status: "Success",
-        message: "Registro Eliminado",
-        bitacora,
-      });
-    } catch (error) {
-      res.send({
-        status: "Error",
-        message: "Error al eliminar registro",
-        error,
-      });
-      next(error);
-    }
-  };
-
 
 module.exports = {
     save,
     update,
     listAll,
-    listById,
-    deleteBitacora,
+    listById
 }

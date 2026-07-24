@@ -1,9 +1,9 @@
 // importar dependencias
+require("dotenv").config();
 const jwt = require("jwt-simple");
 const moment = require("moment");
 
-//clave secreta
-const secretKey = "secret_key_mantenimiento_sis_1981";
+const secretKey = process.env.JWT_SECRET;
 
 // crear funcion para generar token
 const createToken = (user) => {

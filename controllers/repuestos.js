@@ -7,11 +7,12 @@ const save = async (req, res, next) => {
       nombre: req.body.nombre,
       marca: req.body.marca,
       tipo: req.body.tipo,
-      otras: req.body.otras,
+      otras: req.body.tipo,
       precio: req.body.precio,
       cantidad: req.body.cantidad,
       minStock: req.body.minStock,
       equipo: req.body.equipo,
+      criticidad: req.body.criticidad,
     });
     let documento = await repuesto.save();
     res.send({
@@ -34,7 +35,7 @@ const deleteRepuesto = async (req, res, next) => {
   try {
     let repuesto = await Repuesto.deleteOne({ _id: req.params.id });
     return res.status(200).send({
-      status: "Succes",
+      status: "Success",
       message: "Registro Eliminado",
       repuesto,
     });
@@ -76,7 +77,7 @@ const listAll = async (req, res, next) => {
     let repuesto = await Repuesto.find({});
 
     res.json({
-      status: "Succes",
+      status: "Success",
       message: "Listado Completo correcto",
       repuesto,
     });
@@ -97,7 +98,7 @@ const listOne = async (req, res, next) => {
 
     console.log(equipo);
     res.send({
-      status: "Succes",
+      status: "Success",
       message: "Listado por unidad correcto",
       repuesto,
     });
@@ -116,7 +117,7 @@ const listbyequipo = async (req, res, next) => {
     const equipo = req.params.id;
     let repuesto = await Repuesto.find({ equipo });
     res.send({
-      status: "Succes",
+      status: "Success",
       message: "Consulta de registros exitosa",
       repuesto,
     });

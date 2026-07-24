@@ -1,47 +1,40 @@
-import React, {  useRef } from "react";
-import { Table } from "react-bootstrap";
-import ExportToExcel from '../ExportToExcel/ExportToExcel';
+import { useRef } from "react";
+import { DataTable } from "mantine-datatable";
+import ExportToExcel from "../ExportToExcel/ExportToExcel";
 import { DateTime } from "luxon";
 
-const TaskNotDoneTable = ({taskNotDone}) => {
-    console.log("Desde Tabla", taskNotDone.taskNotdone)
-    const tableRef = useRef(null);
+const TaskNotDoneTable = ({ taskNotDone }) => {
+  const tableRef = useRef(null);
+
+  const columns = [
+    {
+      accessor: "fechaDone", title: "Programado",
+      render: ({ fechaDone }) => DateTime.fromISO(fechaDone).toFormat("dd-MM-yyyy"),
+    },
+    { accessor: "task.equipo",    title: "Equipo" },
+    { accessor: "task.tarea",     title: "Tarea" },
+    { accessor: "task.encargado", title: "Responsable" },
+    { accessor: "motivo",         title: "Motivo" },
+  ];
+
   return (
     <>
-    <div className="py-3">
-      <ExportToExcel tableRef={tableRef} filename="Tabla_preventivo_no_cumplido" sheet="Preventivo"/>
-    </div>
-    <Table ref={tableRef} hover variant="dark">
-              <thead>
-                <tr>
-                  <th>Programado</th>
-                  <th>Equipo</th>
-                  <th>Tarea</th>
-                  <th>Responsable</th>
-                  <th>Motivo</th>
-                  
-                </tr>
-              </thead>
-              <tbody>
-                {taskNotDone.taskNotdone &&
-                  taskNotDone.taskNotdone.map((task) => {
-                    const fechaFormateada = DateTime.fromISO(
-                      task.fechaDone
-                    ).toFormat("dd-MM-yyyy");
-                    return (
-                      <tr key={task._id}>
-                        <td>{fechaFormateada}</td>
-                        <td>{task.task.equipo}</td>
-                        <td>{task.task.tarea}</td>
-                        <td>{task.task.encargado}</td>
-                        <td>{task.motivo}</td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </Table>
+      <div className="py-3">
+        <ExportToExcel tableRef={tableRef} filename="Tabla_preventivo_no_cumplido" sheet="Preventivo" />
+      </div>
+      <DataTable
+        columns={columns}
+        records={taskNotDone.taskNotdone ?? []}
+        withTableBorder
+        borderRadius="sm"
+        striped
+        highlightOnHover
+        minHeight={150}
+        noRecordsText="No hay tareas no cumplidas"
+        tableProps={{ ref: tableRef }}
+      />
     </>
-  )
-}
+  );
+};
 
-export default TaskNotDoneTable
+export default TaskNotDoneTable;

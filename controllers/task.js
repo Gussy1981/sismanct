@@ -8,7 +8,7 @@ const save = async (req, res, next) => {
         })
         let documento = await tarea.save()
         res.send({
-            status: "Succes",
+            status: "Success",
             message: "Registro Guardado",
             documento
         });
@@ -27,7 +27,7 @@ const deleteTarea = async (req, res, next) => {
     try {
         let tarea = await Task.deleteOne({ _id: req.params.id })
         return res.status(200).send({
-            status: "Succes",
+            status: "Success",
             message: "Registro Eliminado",
             tarea
         });
@@ -48,7 +48,7 @@ const update = async (req, res, next) => {
     try {
         let tarea = await Task.updateOne({ _id: req.params.id }, req.body, { multi: false });
         res.send({
-            status: "Succes",
+            status: "Success",
             message: "Registro modificado Correctamente",
             tarea
         })
@@ -68,7 +68,7 @@ const listAll = async (req, res, next) => {
     try {
         let tarea = await Task.find({});
         res.send({
-            status: "Succes",
+            status: "Success",
             message: "Listado Completo correcto",
             tarea
         })
@@ -87,7 +87,7 @@ const listOne = async (req, res, next) => {
     try {
         const tarea = await Task.findById(req.params.id);
         res.send({
-            status: "Succes",
+            status: "Success",
             message: "Listado por unidad correcto",
             tarea
         })

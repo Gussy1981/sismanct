@@ -12,7 +12,7 @@ const save = async (req, res, next) => {
       fechaDone,
       encargado,
       motivo,
-      motivoEstado,
+      motivoEstado: false,
     });
     await nuevaTareaNoCumplida.save();
     res.status(200).json({ message: "Tarea No cumplida guardada con éxito" });

@@ -2,24 +2,19 @@ const equipo = require("../models/equipo");
 const Equipo = require("../models/equipo");
 const fs = require("fs");
 
+//Metodo para guardar registros
 const save = async (req, res, next) => {
   try {
     const { clasificacion, codigo, tipo, temperaturaDeTrabajo, caracteristicasDeCalentamiento } = req.body;
-    const file = req.file;
-
+    const {filename, path} = req.file;
     let equipo = new Equipo({
       clasificacion,
       codigo,
       tipo,
       temperaturaDeTrabajo,
+      urlImagen: path,
       caracteristicasDeCalentamiento,
     });
-
-    // Verificar si se proporcionó un archivo antes de intentar acceder a sus propiedades
-    if (file) {
-      equipo.urlImagen = file.path;
-    }
-
     let documento = await equipo.save();
     res.send({
       status: "Success",
@@ -36,13 +31,12 @@ const save = async (req, res, next) => {
   }
 };
 
-
 //Metodo para eliminar registros
 const deleteEquipo = async (req, res, next) => {
   try {
     let equipo = await Equipo.deleteOne({ _id: req.params.id });
     return res.status(200).send({
-      status: "Succes",
+      status: "Success",
       message: "Registro Eliminado",
       equipo,
     });
@@ -83,7 +77,7 @@ const listAll = async (req, res, next) => {
   try {
     let equipo = await Equipo.find({});
     res.json({
-      status: "Succes",
+      status: "Success",
       message: "Listado Completo correcto",
       equipo,
     });
@@ -104,7 +98,7 @@ const listOne = async (req, res, next) => {
 
     console.log(equipo);
     res.send({
-      status: "Succes",
+      status: "Success",
       message: "Listado por unidad correcto",
       equipo,
     });
@@ -126,7 +120,7 @@ const listByClass = async (req, res, next) => {
 
     console.log(equipo);
     res.send({
-      status: "Succes",
+      status: "Success",
       message: "Listado por clasificacion correcto",
       equipo,
     });
@@ -180,7 +174,7 @@ const updateImage = async (req, res, next) => {
 
     const equipo = await Equipo.updateOne({_id: id}, {urlImagen: file.path}, {multi: false});
     res.json({
-        status: "Succes",
+        status: "Success",
         message: "Registro modificado Correctamente",
         equipo,
     });

@@ -1,7 +1,6 @@
 import axios from "axios";
 import { Global } from "../../helpers/Global";
 import Swal from "sweetalert2";
-import { id } from "date-fns/locale";
 
 //Metodo para obtener todas las tareas preventivas iniciadas
 export const getTareasPreventivo = async () => {
@@ -432,11 +431,11 @@ export const updateEquipo = async (equipoId, values) =>{
       Global.url + "equipo/update/" + id,
       values,
       {
-        headers: headers, 
+        headers: headers,
       }
     );
       console.log("Respuesta de axios.put", response);
-      return response
+      return response.data
   } catch (error) {
     console.log(error);
   };
@@ -584,6 +583,28 @@ export const updateRepuesto = async (repuestoId, values) =>{
   };
 
 }
+
+//Metodo para obtener el KPI de repuestos críticos utilizados en un período
+export const getKpiRepuestosCriticos = async (desde, hasta) => {
+  try {
+    const token = localStorage.getItem("token");
+    let headers = {
+      "Content-Type": "application/json",
+      Authorization: token,
+    };
+    const params = new URLSearchParams();
+    if (desde) params.append("desde", desde);
+    if (hasta) params.append("hasta", hasta);
+
+    const response = await axios.get(
+      Global.url + "movimientostock/kpi-criticos" + (params.toString() ? `?${params.toString()}` : ""),
+      { headers: headers }
+    );
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 //Metodo para eliminar repuestos
 export const deleteRepuesto = async (repuestoId) =>{
@@ -815,13 +836,6 @@ export const saveCorrectivo = async (values) => {
     return response.data;
   } catch (error) {
     console.log(error);
-    if (error.response.data.mensaje === "Cantidad insuficiente de repuesto") {
-      Swal.fire ({
-        icon: "error",
-        title: "No hay suficientes repuestos para esta reparación",
-        showConfirmButton: true,
-      })
-    }
   }
 };
 
@@ -1225,28 +1239,6 @@ export const saveBitacora = async (content) => {
           text: 'Hubo un problema al crear la bitacora.',
       });
   }
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-//Metodo para eliminar una Bitacora
-export const deleteBitacora = async (Id) => {
-  try {
-    const id = Id
-    const token = localStorage.getItem("token");
-    console.log(token);
-    let headers = {
-      "Content-Type": "application/json",
-      Authorization: token,
-    };
-    const response = await axios.delete(
-      Global.url + "bitacora/delete/" + id,
-      {
-        headers: headers,
-      }
-    );
     return response.data;
   } catch (error) {
     console.log(error);
