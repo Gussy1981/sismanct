@@ -1,4 +1,5 @@
 const Pirometria = require("../models/pirometria");
+const RegistroPirometria = require("../models/pirometriaDone");
 const { DateTime } = require("luxon");
 
 // Controlador para crear un nuevo registro de pirometria
@@ -52,9 +53,19 @@ const listByInicio = async (req, res) => {
 
   try {
     const pirometrias = await Pirometria.find();
+
+    // Equipos con un control ya cargado pero todavía sin validar: no deben
+    // volver a pedirle al operario que cargue datos hasta que se valide
+    const pendientesDeValidar = await RegistroPirometria.find({ resultado: null })
+      .select("equipo")
+      .lean();
+    const equiposPendientesDeValidar = new Set(pendientesDeValidar.map((r) => r.equipo));
+
     const pirometriasToReturn = [];
 
     for (const pirometria of pirometrias) {
+      if (equiposPendientesDeValidar.has(pirometria.equipo)) continue;
+
       if (pirometria.inicio && !pirometria.estado) {
         pirometriasToReturn.push(pirometria);
       } else if (
@@ -63,8 +74,8 @@ const listByInicio = async (req, res) => {
         pirometria.proximoControl
       ) {
         const hoy = DateTime.local().startOf("day");
-        const nextControl = pirometria.proximoControl;
-          if (hoy.equals(nextControl) || hoy > nextControl) {
+        const nextControl = DateTime.fromJSDate(pirometria.proximoControl).startOf("day");
+          if (hoy >= nextControl) {
             pirometriasToReturn.push(pirometria);
           }
       }

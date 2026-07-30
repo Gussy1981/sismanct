@@ -39,9 +39,10 @@ const listadoTaskNotDone = () => {
 
       for (const obj of data) {
         const motivo = obj.motivo;
-        const equipo = obj.task.equipo;
-        const responsable = obj.task.encargado;
-        const tarea = obj.task.tarea;
+        // obj.task puede ser null si la tarea preventiva referenciada fue eliminada
+        const equipo = obj.task?.equipo ?? "Tarea eliminada";
+        const responsable = obj.encargado;
+        const tarea = obj.task?.tarea ?? "Tarea eliminada";
         console.log("equipos", equipo);
         console.log("motivos", motivo);
 

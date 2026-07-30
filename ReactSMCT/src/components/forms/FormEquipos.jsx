@@ -30,9 +30,12 @@ const FormEquipos = ({ mode, equipo, updateEquipoList, updateOk }) => {
           const formData = new FormData();
           formData.append("file0", fileInput.files[0]);
           const imageResponse = await updateImage(formData, equipo._id);
-          if (imageResponse.status === "Success") {
+          if (imageResponse?.status === "Success") {
             response = await updateEquipo(equipo._id, { ...values, urlImagen: imageResponse.url });
             updateOk();
+          } else {
+            await Swal.fire("Error", imageResponse?.message ?? "No se pudo actualizar la imagen", "error");
+            return;
           }
         } else {
           response = await updateEquipo(equipo._id, values);

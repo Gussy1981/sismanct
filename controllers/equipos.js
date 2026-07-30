@@ -150,7 +150,7 @@ const updateImage = async (req, res, next) => {
     let image = file.originalname;
 
     const imageSplit = image.split(".");
-    const extension = imageSplit[1];
+    const extension = imageSplit[imageSplit.length - 1].toLowerCase();
 
     if (
       extension != "png" &&

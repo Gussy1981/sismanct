@@ -8,14 +8,14 @@ const save = async (req, res) => {
     const { numColumnas, numFilas, columnas, equipo, responsable, resultado, vistoBueno, pirometroPatron, termocuplaPatron,observaciones } = req.body;
     const Id = req.body._id;
     const fechaControl = DateTime.now();
-    const nextControl = fechaControl.plus({months: 3});
-    const proximoControl = nextControl
     const pirometria = await Pirometria.findById(Id);
 
     if (!pirometria) {
         return res.status(404).json({ message: "Pirometria no encontrada" });
       }
-    
+
+    // El próximo control (proximoControl / estado) recién se define cuando el
+    // control queda validado como OK (ver updatePiroDone), no al cargar los datos
     const registroPirometria = new RegistroPirometria({
       numColumnas,
       numFilas,
@@ -23,7 +23,6 @@ const save = async (req, res) => {
       equipo,
       responsable,
       fechaControl,
-      proximoControl,
       resultado,
       vistoBueno,
       pirometroPatron,
@@ -33,15 +32,6 @@ const save = async (req, res) => {
     });
 
     const savedRegistroPirometria = await registroPirometria.save();
-
-    const fechaActual = DateTime.local();
-    const fechaProximoControl = fechaActual.plus({months: 3});
-    const fechaProximaFormated = fechaProximoControl.toISODate();
-    pirometria.proximoControl = fechaProximaFormated;
-    pirometria.estado = true;
-
-    await pirometria.save();
-    
 
     res.status(201).json({
         status: "Success",
@@ -72,11 +62,34 @@ const listAll = async (req, res) => {
 //Metodo para modificar registros
 const updatePiroDone = async (req, res, next) => {
   try {
-      let dataToUpdate = await RegistroPirometria.updateOne({ _id: req.params.id }, req.body, { multi: false });
+      const registroActualizado = await RegistroPirometria.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+
+      if (!registroActualizado) {
+        return res.status(404).json({ status: "Error", message: "Registro no encontrado" });
+      }
+
+      // El reloj de 3 meses para el próximo control recién arranca cuando el
+      // control queda validado como OK, no cuando se cargaron los datos
+      if (registroActualizado.resultado === "OK") {
+        const proximoControl = DateTime.now().plus({ months: 3 }).toJSDate();
+
+        registroActualizado.proximoControl = proximoControl;
+        await registroActualizado.save();
+
+        await Pirometria.findOneAndUpdate(
+          { equipo: registroActualizado.equipo },
+          { estado: true, proximoControl }
+        );
+      }
+
       res.json({
           status: "Success",
           message: "Registro modificado Correctamente",
-          dataToUpdate
+          dataToUpdate: registroActualizado
       })
   } catch (error) {
       res.send({

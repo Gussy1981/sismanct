@@ -8,35 +8,63 @@ const exportToPDF = (values, dataEquipo) => {
     orientation: "landscape",
   });
   
-  // Definir la posición inicial de la tabla y el ancho de las columnas
+  // Posición inicial de la tabla
   const x = 5; // Posición X de inicio
   const y = 65; // Posición Y de inicio
-  const columnWidth = 15; // Ancho de cada columna
-  const rowHeight = 5; // Altura de cada fila
-  
-  // Definir la posición Y inicial de la tabla
-  let currentY = y;
-  
-  // Iterar sobre las filas y columnas y agregar los datos a la tabla
-  Object.keys(values.columnas).forEach((nombreColumna, columnIndex) => {
-    // Agregar encabezados de columna y líneas verticales
-    doc.setLineWidth(0.1);
-    //doc.rect(x + columnIndex * columnWidth, currentY, columnWidth, rowHeight, "S");
-    doc.setFontSize(9);
-    doc.text(values.columnas[nombreColumna][0], x + columnIndex * columnWidth + 3, currentY + 4); // Modificar texto de cabecera
-    
-    values.columnas[nombreColumna].forEach((fila, rowIndex) => {
-      // Calcular la posición de la celda y agregar líneas horizontales
-      const cellX = x + columnIndex * columnWidth;
-      const cellY = currentY + 1 + rowIndex * rowHeight;
+  const cellPadding = 2;
+  const headerFontSize = 9;
+  const dataFontSize = 8;
+
+  const columnasKeys = Object.keys(values.columnas);
+  const numColumnas = columnasKeys.length;
+  const numFilas = numColumnas ? values.columnas[columnasKeys[0]].length : 0;
+
+  // Ancho de columna: se reparte el ancho disponible de la tabla (hasta el
+  // esquema general de calentamiento, en x=165) entre la cantidad real de
+  // columnas, con un mínimo/máximo razonable para que no queden ni
+  // demasiado angostas (pocas columnas) ni demasiado anchas (muchas columnas)
+  const tableAreaWidth = 158;
+  const minColumnWidth = 15;
+  const maxColumnWidth = 40;
+  const columnWidth = numColumnas
+    ? Math.min(maxColumnWidth, Math.max(minColumnWidth, tableAreaWidth / numColumnas))
+    : minColumnWidth;
+
+  // Alto de fila: se calcula por fila según la cantidad de líneas que
+  // necesite el texto más largo de esa fila una vez ajustado (wrap) al
+  // ancho de columna, así el texto nunca se sale de la celda
+  const rowHeights = [];
+  for (let rowIndex = 0; rowIndex < numFilas; rowIndex++) {
+    doc.setFontSize(rowIndex === 0 ? headerFontSize : dataFontSize);
+    let maxLineas = 1;
+    columnasKeys.forEach((nombreColumna) => {
+      const texto = String(values.columnas[nombreColumna][rowIndex] ?? "");
+      const lineas = doc.splitTextToSize(texto, columnWidth - cellPadding * 2);
+      maxLineas = Math.max(maxLineas, lineas.length);
+    });
+    // getLineHeight() devuelve el valor en puntos tipográficos (pt), no en
+    // la unidad del documento (mm) -> hay que convertirlo con scaleFactor
+    const lineHeightMm = doc.getLineHeight() / doc.internal.scaleFactor;
+    rowHeights.push(Math.max(5, maxLineas * lineHeightMm + 2));
+  }
+
+  // Dibujar la grilla: bordes de celda + texto ajustado (wrap) a la columna
+  columnasKeys.forEach((nombreColumna, columnIndex) => {
+    const cellX = x + columnIndex * columnWidth;
+    let cellY = y;
+
+    values.columnas[nombreColumna].forEach((valor, rowIndex) => {
+      const rowHeight = rowHeights[rowIndex];
+
       doc.setLineWidth(0.1);
       doc.rect(cellX, cellY, columnWidth, rowHeight, "S");
-      
-      // Agregar los datos de la celda
-      if (rowIndex > 0) { // Evitar agregar el valor de encabezado nuevamente
-        doc.setFontSize(8);
-        doc.text(fila, cellX + 2, cellY + 3);
-      }
+
+      doc.setFontSize(rowIndex === 0 ? headerFontSize : dataFontSize);
+      const texto = String(valor ?? "");
+      const lineas = doc.splitTextToSize(texto, columnWidth - cellPadding * 2);
+      doc.text(lineas, cellX + cellPadding, cellY + cellPadding + 1.5);
+
+      cellY += rowHeight;
     });
   });
 
@@ -112,13 +140,34 @@ const exportToPDF = (values, dataEquipo) => {
   doc.text(proximaFecha, 34, 204);
   doc.setFontSize(12);
   doc.text("Esquema General de Calentamiento", 197, 64);
-  doc.addImage(esquema, "PNG", 190, 66, 70, 140); //Logo Cementa
+
+  // Encuadrar el esquema respetando su relación de aspecto real, para que no
+  // quede estirado dentro del recuadro de 70x140mm reservado para la imagen
+  const esquemaBoxX = 170, esquemaBoxY = 66, esquemaBoxWidth = 120, esquemaBoxHeight = 140;
+  const esquemaProps = doc.getImageProperties(esquema);
+  const esquemaRatio = esquemaProps.width / esquemaProps.height;
+  const boxRatio = esquemaBoxWidth / esquemaBoxHeight;
+
+  let esquemaDrawWidth, esquemaDrawHeight;
+  if (esquemaRatio > boxRatio) {
+    esquemaDrawWidth = esquemaBoxWidth;
+    esquemaDrawHeight = esquemaBoxWidth / esquemaRatio;
+  } else {
+    esquemaDrawHeight = esquemaBoxHeight;
+    esquemaDrawWidth = esquemaBoxHeight * esquemaRatio;
+  }
+  const esquemaX = esquemaBoxX + (esquemaBoxWidth - esquemaDrawWidth) / 2;
+  const esquemaY = esquemaBoxY + (esquemaBoxHeight - esquemaDrawHeight) / 2;
+
+  doc.addImage(esquema, "PNG", esquemaX, esquemaY, esquemaDrawWidth, esquemaDrawHeight);
   doc.setFontSize(12);
   doc.text(equipo, 18, 27);
   
 
-  // Guardar el PDF
-  doc.save("tabla.pdf");
+  // Guardar el PDF con nombre identificable: <equipo>_<mes>_<año>.pdf
+  const mesControl = DateTime.fromISO(values.fechaControl).setLocale("es").toFormat("MMMM_yyyy");
+  const nombreArchivo = `${equipo}_${mesControl}.pdf`;
+  doc.save(nombreArchivo);
 };
 
 export default exportToPDF;
