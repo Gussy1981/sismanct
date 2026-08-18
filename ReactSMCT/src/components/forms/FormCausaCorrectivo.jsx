@@ -1,16 +1,17 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { handleEnterAsTab } from '../../helpers/formKeyboard';
 
 const FormCausaCorrectivo = () => {
-  // Esquema de validación con Yup
+  // Esquema de validaciï¿½n con Yup
   const validationSchema = Yup.object({
     motivo: Yup.string().required('El motivo es obligatorio'),
   });
 
-  // Función para manejar la submisión del formulario
+  // Funciï¿½n para manejar la submisiï¿½n del formulario
   const handleSubmit = (values, { setSubmitting }) => {
-    // Aquí puedes completar con tu lógica para la petición a la API
+    // Aquï¿½ puedes completar con tu lï¿½gica para la peticiï¿½n a la API
     console.log(values); // Valores del formulario
     setSubmitting(false);
   };
@@ -23,7 +24,7 @@ const FormCausaCorrectivo = () => {
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
     >
-      <Form>
+      <Form onKeyDown={handleEnterAsTab}>
         <div>
           <label htmlFor="motivo">Motivo</label>
           <Field type="text" id="motivo" name="motivo" />

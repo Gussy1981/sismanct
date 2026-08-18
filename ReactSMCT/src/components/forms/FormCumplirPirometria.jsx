@@ -3,6 +3,7 @@ import { Formik, Form, FieldArray, Field, ErrorMessage } from "formik";
 import { savePirometriaDone } from "../configuracion/api";
 import Swal from "sweetalert2";
 import * as Yup from "yup";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const validationSchema = Yup.object().shape({
   numColumnas: Yup.number()
@@ -58,7 +59,7 @@ const FormEdicionPirometria = ({ mode, initialValues, updateOk, updateListAfterS
       onSubmit={handleSubmit}
     >
       {({ values }) => (
-        <Form>
+        <Form onKeyDown={handleEnterAsTab}>
           <div className="flex items-center justify-center h1 space-x-10 text-cyan-800">
             <p>Equipo: {initialValues.equipo}</p>
             <p>Rango de temperatura: {initialValues.temperatura}</p>

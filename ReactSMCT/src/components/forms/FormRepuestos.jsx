@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { getEquipos, saveRepuestos, updateRepuesto } from "../configuracion/api";
 import Swal from "sweetalert2";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
   const [equipos, setEquipos] = useState([]);
@@ -55,7 +56,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-      <Form className="flex flex-col gap-4">
+      <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="nombre" className="f-label">Nombre</label>

@@ -3,11 +3,14 @@ const router = express.Router();
 const EquiposController = require("../controllers/equipos");
 const check = require("../middlewares/auth");
 const multer = require("multer");
+const path = require("path");
 
-//Configuracion de subida
+//Configuracion de subida: se guarda en /uploads (fuera del build de React) para
+//que las imagenes queden disponibles al instante en producción, sin necesidad
+//de rebuildear el frontend cada vez que se sube o reemplaza una imagen
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "./reactsmct/public/");
+    cb(null, path.join(__dirname, "..", "uploads"));
   },
   filename: (req, file, cb) => {
     cb(null, "esquema-" + file.originalname);

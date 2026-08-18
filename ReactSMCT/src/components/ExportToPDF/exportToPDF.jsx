@@ -71,8 +71,12 @@ const exportToPDF = (values, dataEquipo) => {
   doc.roundedRect(2, 2, 293, 206, 5, 5, "S"); //Recuadro general
   const logo = "/logo cementa grande.fw.png";
   const rutaCompleta = dataEquipo.urlImagen;
-  const rutaSplit = rutaCompleta.split("\\");
-  const esquema = rutaSplit[rutaSplit.length - 1];
+  // Imagenes nuevas quedan en /uploads/... (servido aparte del build); las
+  // imagenes viejas guardaron un path de filesystem crudo, del que solo
+  // podemos usar el nombre de archivo (queda en la raíz del build)
+  const esquema = rutaCompleta.startsWith("/uploads/")
+    ? rutaCompleta
+    : "/" + rutaCompleta.split(/[\\/]/).pop();
   const fechaDoneFormated = DateTime.fromISO(values.fechaControl).toFormat("dd-MM-yyyy");
   const responsable = values.responsable;
   const aprobo = values.vistoBueno;

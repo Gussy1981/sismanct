@@ -6,13 +6,12 @@ const fs = require("fs");
 const save = async (req, res, next) => {
   try {
     const { clasificacion, codigo, tipo, temperaturaDeTrabajo, caracteristicasDeCalentamiento } = req.body;
-    const {filename, path} = req.file;
     let equipo = new Equipo({
       clasificacion,
       codigo,
       tipo,
       temperaturaDeTrabajo,
-      urlImagen: path,
+      urlImagen: req.file ? "/uploads/" + req.file.filename : undefined,
       caracteristicasDeCalentamiento,
     });
     let documento = await equipo.save();
@@ -167,15 +166,12 @@ const updateImage = async (req, res, next) => {
       });
     }
 
-    console.log(file.path);
-    console.log(id);
-
-
-
-    const equipo = await Equipo.updateOne({_id: id}, {urlImagen: file.path}, {multi: false});
+    const urlImagen = "/uploads/" + file.filename;
+    const equipo = await Equipo.updateOne({_id: id}, {urlImagen}, {multi: false});
     res.json({
         status: "Success",
         message: "Registro modificado Correctamente",
+        url: urlImagen,
         equipo,
     });
 

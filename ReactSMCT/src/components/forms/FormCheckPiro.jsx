@@ -3,6 +3,7 @@ import * as Yup from "yup";
 import { Offcanvas } from "react-bootstrap";
 import { updatePiroDone } from "../configuracion/api";
 import Swal from "sweetalert2";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const FormCheckPiro = ({ show, handleClose, piroId, closeForm }) => {
   const initialValues = {
@@ -41,7 +42,7 @@ const FormCheckPiro = ({ show, handleClose, piroId, closeForm }) => {
       <Offcanvas.Body>
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onSubmit}>
           {({ errors, touched }) => (
-            <Form className="flex flex-col gap-4 pt-2">
+            <Form className="flex flex-col gap-4 pt-2" onKeyDown={handleEnterAsTab}>
               <div>
                 <label className="f-label">Resultado</label>
                 <Field as="select" name="resultado" className="f-input">

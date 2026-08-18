@@ -2,6 +2,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { saveTask, updateTask } from "../configuracion/api";
 import Swal from "sweetalert2";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const FormTask = ({ mode, task, updateTaskList, updateOk }) => {
   const initialValues = { task: mode === "Edit" && task ? task.task : "" };
@@ -36,7 +37,7 @@ const FormTask = ({ mode, task, updateTaskList, updateOk }) => {
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-      <Form className="flex flex-col gap-4">
+      <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
         <div>
           <label htmlFor="task" className="f-label">Descripción de la tarea</label>
           <Field type="text" id="task" name="task" className="f-input" />

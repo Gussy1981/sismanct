@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
@@ -12,10 +12,21 @@ const validationSchema = Yup.object().shape({
   dni: Yup.string().required("El DNI es requerido"),
 });
 
-const Login = () => {
+const Login = ({ handleClose }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const auth = useAuth();
   const navigate = useNavigate();
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target)) {
+        handleClose?.();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [handleClose]);
 
   const formik = useFormik({
     initialValues: { name: "", dni: "" },
@@ -50,7 +61,7 @@ const Login = () => {
   if (isLoggedIn) return null;
 
   return (
-    <div className="absolute z-50 top-0 right-0 mr-4 mt-16">
+    <div ref={panelRef} className="absolute z-50 top-0 right-0 mr-4 mt-16">
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl p-6 w-72">
         <h2 className="text-orange-500 font-bold text-sm uppercase tracking-widest mb-5 text-center">
           Iniciar Sesión

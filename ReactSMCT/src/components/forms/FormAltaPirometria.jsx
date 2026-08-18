@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Formik, Form, FieldArray, Field, ErrorMessage } from "formik";
 import { savePirometria, updatePirometria } from "../configuracion/api";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 import Swal from "sweetalert2";
 import * as Yup from "yup";
 import FormCheckPiro from "./FormCheckPiro";
@@ -63,7 +64,7 @@ const FormAltaPirometria = ({ mode, pirometria, updatePiroList, updateOk, check,
         onSubmit={!show && !check ? handleSubmit : undefined}
       >
         {({ values, setFieldValue }) => (
-          <Form>
+          <Form onKeyDown={handleEnterAsTab}>
             <div className="flex items-center justify-center py-4">
               {show ? (
                 /* ── Paso 1: definir dimensiones ── */

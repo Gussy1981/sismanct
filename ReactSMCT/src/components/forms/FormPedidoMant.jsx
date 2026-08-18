@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { savePedidos } from "../configuracion/api";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 import ListadoPedidosMant from "../listados/listadoPedidosMant";
 
 const FormPedidoMant = () => {
@@ -33,7 +34,7 @@ const FormPedidoMant = () => {
         onSubmit={handleSubmit}
       >
         {({ errors, touched }) => (
-          <Form className="flex flex-col gap-4 max-w-2xl mx-auto">
+          <Form className="flex flex-col gap-4 max-w-2xl mx-auto" onKeyDown={handleEnterAsTab}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="solicitante" className="f-label">Solicitante</label>

@@ -2,6 +2,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
 import { saveEquipos, updateEquipo, updateImage } from "../configuracion/api";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const FormEquipos = ({ mode, equipo, updateEquipoList, updateOk }) => {
   const initialValues = {
@@ -48,14 +49,19 @@ const FormEquipos = ({ mode, equipo, updateEquipoList, updateOk }) => {
         await Swal.fire({ icon: "success", title: "Operación exitosa", showConfirmButton: false, timer: 1500 });
         resetForm();
         updateEquipoList();
+      } else {
+        await Swal.fire("Error", response?.message ?? "No se pudo guardar el equipo", "error");
       }
-    } catch (error) { console.log(error); }
+    } catch (error) {
+      console.log(error);
+      await Swal.fire("Error", "Hubo un problema al guardar el equipo", "error");
+    }
   };
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
       {({ setFieldValue }) => (
-        <Form encType="multipart/form-data" className="flex flex-col gap-4">
+        <Form encType="multipart/form-data" className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="clasificacion" className="f-label">Clasificación</label>

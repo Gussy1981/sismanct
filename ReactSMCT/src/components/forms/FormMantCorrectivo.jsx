@@ -4,6 +4,7 @@ import { Formik, Form, Field, FieldArray, ErrorMessage } from "formik";
 import { DateTime } from "luxon";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
+import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
 const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
   const [repuestos,    setRepuestos]    = useState([]);
@@ -71,7 +72,7 @@ const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
       {({ values, isSubmitting }) => (
-        <Form className="flex flex-col gap-4">
+        <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="f-label">Fecha</label>

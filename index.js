@@ -4,6 +4,7 @@ const { connection } = require("./db/connection");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const errorHandler = require("./middlewares/errorHandler");
 
 // conexion a bd
@@ -61,6 +62,13 @@ app.get("/ruta-prueba", (req, res) => {
         }
     );
 } )
+
+// servir las imagenes subidas (esquemas de equipo) desde una carpeta propia,
+// independiente del build de React: quedan disponibles al instante, sin
+// necesidad de rebuildear el frontend cada vez que se sube una imagen nueva
+const uploadsPath = path.join(__dirname, "uploads");
+fs.mkdirSync(uploadsPath, { recursive: true });
+app.use("/uploads", express.static(uploadsPath));
 
 // servir el build de React (ReactSMCT/dist) para que todo el sistema
 // (API + frontend) quede disponible desde un único puerto en la red local

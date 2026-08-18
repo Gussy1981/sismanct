@@ -43,7 +43,7 @@ const Header = () => {
         ) : (
         <button className="btn-primary" onClick={handleButtonClick}>Ingresar</button>
       )}
-        {showLogin && <Login />}
+        {showLogin && <Login handleClose={() => setShowLogin(false)} />}
       </div>
       </div>
 </div>
