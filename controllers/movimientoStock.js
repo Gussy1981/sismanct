@@ -30,7 +30,7 @@ const kpiCriticos = async (req, res, next) => {
         }
         const filtro = Object.keys(filtroFecha).length ? { createdAt: filtroFecha } : {};
 
-        const movimientos = await MovimientoStock.find(filtro).populate("repuesto", "nombre criticidad");
+        const movimientos = await MovimientoStock.find(filtro).populate("repuesto", "nombre criticidad unidadStock");
 
         const referenciasCorrectivo = [
             ...new Set(
@@ -46,17 +46,18 @@ const kpiCriticos = async (req, res, next) => {
         for (const c of correctivos) equipoPorReferencia[c._id.toString()] = c.equipo;
 
         const porRepuestoMap = {};
-        let totalUtilizado = 0;
+        const totalPorUnidad = {};
 
         for (const mov of movimientos) {
             if (!mov.repuesto || mov.repuesto.criticidad !== "Critico") continue;
 
             const delta = mov.tipo === "egreso" ? mov.cantidad : -mov.cantidad;
-            totalUtilizado += delta;
+            const unidad = mov.unidad || mov.repuesto.unidadStock || "Unidad";
+            totalPorUnidad[unidad] = (totalPorUnidad[unidad] || 0) + delta;
 
             const key = mov.repuesto._id.toString();
             if (!porRepuestoMap[key]) {
-                porRepuestoMap[key] = { id_repuesto: key, nombre: mov.repuesto.nombre, cantidad: 0, porEquipo: {} };
+                porRepuestoMap[key] = { id_repuesto: key, nombre: mov.repuesto.nombre, unidad, cantidad: 0, porEquipo: {} };
             }
             porRepuestoMap[key].cantidad += delta;
 
@@ -69,6 +70,7 @@ const kpiCriticos = async (req, res, next) => {
             .map((r) => ({
                 id_repuesto: r.id_repuesto,
                 nombre: r.nombre,
+                unidad: r.unidad,
                 cantidad: r.cantidad,
                 porEquipo: Object.entries(r.porEquipo)
                     .filter(([, cantidadEquipo]) => cantidadEquipo > 0)
@@ -80,7 +82,10 @@ const kpiCriticos = async (req, res, next) => {
         res.status(200).json({
             status: "Success",
             kpi: {
-                totalUtilizado: Math.max(totalUtilizado, 0),
+                totalPorUnidad: Object.entries(totalPorUnidad).map(([unidad, cantidad]) => ({
+                    unidad,
+                    cantidad: Math.max(cantidad, 0),
+                })),
                 porRepuesto,
                 desde: desde || null,
                 hasta: hasta || null,

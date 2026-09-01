@@ -71,9 +71,9 @@ const listadoRepuestos = () => {
     { accessor: "marca",    title: "Marca" },
     { accessor: "tipo",     title: "Tipo" },
     { accessor: "otras",    title: "Otras características" },
-    { accessor: "cantidad", title: "Cantidad" },
-    { accessor: "minStock", title: "Stock mín." },
-    { accessor: "precio",   title: "Precio" },
+    { accessor: "cantidad", title: "Cantidad", render: (r) => `${r.cantidad} ${r.unidadStock || "Unidad"}` },
+    { accessor: "minStock", title: "Stock mín.", render: (r) => `${r.minStock} ${r.unidadStock || "Unidad"}` },
+    { accessor: "precio",   title: "Precio", render: (r) => `${r.precio} / ${r.unidadStock || "Unidad"}` },
     {
       accessor: "criticidad",
       title: "Criticidad",

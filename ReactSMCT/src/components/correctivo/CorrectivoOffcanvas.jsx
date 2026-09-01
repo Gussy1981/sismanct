@@ -6,6 +6,16 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
 
   console.log("Desde OffCanvas", repuestoSelect);
 
+  const cantidadEnUnidadStock = (repuesto) => {
+    if (repuesto.cantidadStock != null) return repuesto.cantidadStock;
+    const unidadStock = repuesto.id_repuesto?.unidadStock || repuesto.unidad || "Unidad";
+    const unidadInformada = repuesto.unidad || "Unidad";
+    if (unidadStock === unidadInformada) return repuesto.cantidad;
+    if (unidadStock === "Kgs" && unidadInformada === "Grs") return repuesto.cantidad / 1000;
+    if (unidadStock === "Grs" && unidadInformada === "Kgs") return repuesto.cantidad * 1000;
+    return repuesto.cantidad;
+  };
+
   const calcularCostoTotal = () => {
     /*
     Primero, verificamos si repuestoSelect existe y tiene al menos un elemento, y si ese elemento tiene la propiedad id_repuesto. Esto asegura que tenemos datos válidos para trabajar.
@@ -24,7 +34,7 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
     no tiene datos válidos), simplemente devolvemos 0 como el costo total.
     */
     if (repuestoSelect && repuestoSelect[0] && repuestoSelect[0].id_repuesto) {
-      const costosParciales = repuestoSelect.map(repuesto => repuesto.cantidad * repuesto.id_repuesto.precio);
+      const costosParciales = repuestoSelect.map(repuesto => cantidadEnUnidadStock(repuesto) * repuesto.id_repuesto.precio);
       return costosParciales.reduce((total, costoParcial) => total + costoParcial, 0);
     }
     return 0;
@@ -48,7 +58,7 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
                 <th>Marca</th>
                 <th>Cantidad</th>
                 <th>Unidad</th>
-                <th>Precio Individual</th>
+                <th>Precio / unidad de stock</th>
                 <th>Subtotal</th>
               </tr>
             </thead>  
@@ -59,8 +69,8 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
                 <td>{repuesto.id_repuesto.marca}</td>
                 <td>{repuesto.cantidad}</td>
                 <td>{repuesto.unidad || "Unidad"}</td>
-                <td>{repuesto.id_repuesto.precio}</td>
-                <td>{repuesto.cantidad * repuesto.id_repuesto.precio}</td>
+                <td>{repuesto.id_repuesto.precio} / {repuesto.id_repuesto.unidadStock || "Unidad"}</td>
+                <td>{cantidadEnUnidadStock(repuesto) * repuesto.id_repuesto.precio}</td>
               </tr>
             ))} 
             </tbody>

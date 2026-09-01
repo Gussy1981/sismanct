@@ -47,7 +47,9 @@ const KpiCriticosOffcanvas = ({ show, handleClose }) => {
           <div className="pt-2 text-white">
             <p className="mb-3" style={{ fontSize: "1.1rem" }}>
               Total de repuestos críticos utilizados:{" "}
-              <span className="fw-bold" style={{ fontSize: "1.5rem" }}>{kpi.totalUtilizado}</span>
+              <span className="fw-bold" style={{ fontSize: "1.2rem" }}>
+                {(kpi.totalPorUnidad || []).map((t) => `${t.cantidad} ${t.unidad}`).join(" · ") || "0"}
+              </span>
             </p>
             {kpi.porRepuesto.length > 0 ? (
               <Table hover variant="dark">
@@ -64,11 +66,11 @@ const KpiCriticosOffcanvas = ({ show, handleClose }) => {
                     <tr key={r.id_repuesto}>
                       <td>{index + 1}</td>
                       <td>{r.nombre}</td>
-                      <td className="text-center fw-bold">{r.cantidad}</td>
+                      <td className="text-center fw-bold">{r.cantidad} {r.unidad}</td>
                       <td>
                         {r.porEquipo.map((e) => (
                           <span key={e.equipo} className="d-inline-block me-2">
-                            {e.equipo} <span className="text-zinc-400">({e.cantidad})</span>
+                            {e.equipo} <span className="text-zinc-400">({e.cantidad} {r.unidad})</span>
                           </span>
                         ))}
                       </td>

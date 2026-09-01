@@ -74,10 +74,14 @@ const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
   const selectCls = "f-input";
   const inputCls  = "f-input";
   const equipoPedidoNoCatalogado = pedidoMant?.equipo && !fetchEquipos.some((eq) => eq.codigo === pedidoMant.equipo);
+  const unidadesDisponibles = (repuestoId) => {
+    const unidadStock = repuestos.find((r) => r._id === repuestoId)?.unidadStock || "Unidad";
+    return unidadStock === "Unidad" ? ["Unidad"] : ["Grs", "Kgs"];
+  };
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-      {({ values, isSubmitting }) => (
+      {({ values, isSubmitting, setFieldValue }) => (
         <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -129,17 +133,22 @@ const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
             <FieldArray name="repuestosUtilizados">
               {({ push, remove }) => (
                 <div className="flex flex-col gap-2">
-                  {values.repuestosUtilizados.map((_, index) => (
+                  {values.repuestosUtilizados.map((fila, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Field as="select" name={`repuestosUtilizados.${index}.id_repuesto`} className={`${selectCls} flex-1`}>
+                      <Field as="select" name={`repuestosUtilizados.${index}.id_repuesto`} className={`${selectCls} flex-1`}
+                        onChange={(event) => {
+                          const repuestoId = event.target.value;
+                          setFieldValue(`repuestosUtilizados.${index}.id_repuesto`, repuestoId);
+                          setFieldValue(`repuestosUtilizados.${index}.unidad`, unidadesDisponibles(repuestoId)[0]);
+                        }}>
                         <option value="">Selecciona un repuesto</option>
-                        {repuestos?.map((r) => <option key={r._id} value={r._id}>{r.nombre} — {r.tipo}</option>)}
+                        {repuestos?.map((r) => <option key={r._id} value={r._id}>{r.nombre} — {r.tipo} — Stock: {r.cantidad} {r.unidadStock || "Unidad"}</option>)}
                       </Field>
                       <Field type="number" min="0.001" step="any" aria-label="Cantidad" name={`repuestosUtilizados.${index}.cantidad`} className={`${inputCls} w-24`} />
                       <Field as="select" aria-label="Unidad" name={`repuestosUtilizados.${index}.unidad`} className={`${selectCls} w-28`}>
-                        <option value="Unidad">Unidad</option>
-                        <option value="Grs">Grs</option>
-                        <option value="Kgs">Kgs</option>
+                        {unidadesDisponibles(fila.id_repuesto).map((unidad) => (
+                          <option key={unidad} value={unidad}>{unidad}</option>
+                        ))}
                       </Field>
                       {index === values.repuestosUtilizados.length - 1 ? (
                         <button type="button" onClick={() => push({ id_repuesto: "", cantidad: 1, unidad: "Unidad" })} className="btn-success shrink-0">+</button>

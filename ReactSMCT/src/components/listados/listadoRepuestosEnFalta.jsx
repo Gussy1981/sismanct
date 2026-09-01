@@ -35,8 +35,8 @@ const listadoRepuestosEnFalta = () => {
     { accessor: "nombre",   title: "Nombre" },
     { accessor: "marca",    title: "Marca" },
     { accessor: "tipo",     title: "Tipo" },
-    { accessor: "cantidad", title: "Cantidad" },
-    { accessor: "minStock", title: "Stock mín." },
+    { accessor: "cantidad", title: "Cantidad", render: (r) => `${r.cantidad} ${r.unidadStock || "Unidad"}` },
+    { accessor: "minStock", title: "Stock mín.", render: (r) => `${r.minStock} ${r.unidadStock || "Unidad"}` },
     {
       accessor: "accion", title: "", textAlign: "center",
       render: (repuesto) => (

@@ -11,6 +11,11 @@ const RepuestosSchema = Schema({
         type: String,
         enum: ["Unidad", "Grs", "Kgs"],
         default: "Unidad"
+    },
+    cantidadStock: Number,
+    unidadStock: {
+        type: String,
+        enum: ["Unidad", "Grs", "Kgs"]
     }
 })
 

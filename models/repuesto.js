@@ -13,6 +13,11 @@ const RepuestoSchema = Schema({
         type: Number,
         min: 0,
     },
+    unidadStock: {
+        type: String,
+        enum: ["Unidad", "Grs", "Kgs"],
+        default: "Unidad",
+    },
     minStock: {
         type: Number,
         min: 1,

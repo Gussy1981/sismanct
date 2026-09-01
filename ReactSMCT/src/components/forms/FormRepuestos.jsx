@@ -25,6 +25,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
     tipo:    mode === "Edit" ? repuesto?.tipo    ?? "" : "",
     otras:   mode === "Edit" ? repuesto?.otras   ?? "" : "",
     cantidad:mode === "Edit" ? repuesto?.cantidad ?? 0 : 0,
+    unidadStock: mode === "Edit" ? repuesto?.unidadStock ?? "Unidad" : "Unidad",
     minStock:mode === "Edit" ? repuesto?.minStock ?? 1 : 1,
     precio:  mode === "Edit" ? repuesto?.precio  ?? 0 : 0,
     equipo:  mode === "Edit" ? repuesto?.equipo  ?? "" : "",
@@ -33,8 +34,15 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
 
   const validationSchema = Yup.object({
     nombre:   Yup.string().required("El nombre es obligatorio"),
-    cantidad: Yup.number().required("La cantidad es obligatoria"),
-    minStock: Yup.number().required("El stock mínimo es obligatorio"),
+    cantidad: Yup.number().min(0).required("La cantidad es obligatoria")
+      .test("entero-unidad", "La cantidad debe ser entera para Unidad", function (value) {
+        return this.parent.unidadStock !== "Unidad" || Number.isInteger(value);
+      }),
+    unidadStock: Yup.string().oneOf(["Unidad", "Grs", "Kgs"]).required("La unidad es obligatoria"),
+    minStock: Yup.number().positive().required("El stock mínimo es obligatorio")
+      .test("entero-unidad", "El stock mínimo debe ser entero para Unidad", function (value) {
+        return this.parent.unidadStock !== "Unidad" || Number.isInteger(value);
+      }),
     precio:   Yup.number().required("El costo es obligatorio"),
     equipo:   Yup.string().required("El equipo es obligatorio"),
     criticidad: Yup.string().oneOf(["Critico", "Normal"]).required("La criticidad es obligatoria"),
@@ -56,7 +64,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-      <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
+      {({ values }) => <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="nombre" className="f-label">Nombre</label>
@@ -79,15 +87,24 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
           <Field as="textarea" id="otras" name="otras" rows={3} className="f-input resize-none" />
           <ErrorMessage name="otras" component="p" className="f-error" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <label htmlFor="cantidad" className="f-label">Cantidad</label>
-            <Field type="number" id="cantidad" name="cantidad" className="f-input" />
+            <Field type="number" min="0" step={values.unidadStock === "Unidad" ? "1" : "any"} id="cantidad" name="cantidad" className="f-input" />
             <ErrorMessage name="cantidad" component="p" className="f-error" />
           </div>
           <div>
+            <label htmlFor="unidadStock" className="f-label">Unidad de stock</label>
+            <Field as="select" id="unidadStock" name="unidadStock" className="f-input">
+              <option value="Unidad">Unidad</option>
+              <option value="Grs">Grs</option>
+              <option value="Kgs">Kgs</option>
+            </Field>
+            <ErrorMessage name="unidadStock" component="p" className="f-error" />
+          </div>
+          <div>
             <label htmlFor="minStock" className="f-label">Stock mínimo</label>
-            <Field type="number" id="minStock" name="minStock" className="f-input" />
+            <Field type="number" min="0.001" step={values.unidadStock === "Unidad" ? "1" : "any"} id="minStock" name="minStock" className="f-input" />
             <ErrorMessage name="minStock" component="p" className="f-error" />
           </div>
           <div>
@@ -121,7 +138,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
             {mode === "Edit" ? "Modificar" : "Guardar"}
           </button>
         </div>
-      </Form>
+      </Form>}
     </Formik>
   );
 };

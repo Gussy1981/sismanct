@@ -2,6 +2,7 @@ const Correctivo = require("../models/mantcorrectivo");
 const Repuesto = require("../models/repuesto");
 const MovimientoStock = require("../models/movimientoStock");
 const { DateTime } = require("luxon");
+const { convertirAUnidadStock } = require("../services/stockUnits");
 
 const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
@@ -29,10 +30,12 @@ const save = async (req, res, next) => {
             if (!repuestoPrevio) {
                 throw Object.assign(new Error(`Repuesto ${id_repuesto} no encontrado`), { statusCode: 404 });
             }
+            const unidadStock = repuestoPrevio.unidadStock || "Unidad";
+            const cantidadStock = convertirAUnidadStock(cantidadUtilizada, unidad, unidadStock);
 
             const actualizado = await Repuesto.findOneAndUpdate(
-                { _id: id_repuesto, cantidad: { $gte: cantidadUtilizada } },
-                { $inc: { cantidad: -cantidadUtilizada } },
+                { _id: id_repuesto, cantidad: { $gte: cantidadStock } },
+                { $inc: { cantidad: -cantidadStock } },
                 { new: true }
             );
 
@@ -46,10 +49,12 @@ const save = async (req, res, next) => {
             decrementados.push({
                 id_repuesto,
                 cantidadUtilizada,
+                cantidadStock,
                 stockAnterior: repuestoPrevio.cantidad,
                 stockResultante: actualizado.cantidad,
                 nombreRepuesto: repuestoPrevio.nombre,
                 unidad,
+                unidadStock,
             });
         }
 
@@ -61,10 +66,12 @@ const save = async (req, res, next) => {
             motivo,
             tareas,
             tiempo,
-            repuestosUtilizados: repuestosUtilizados.map((r) => ({
-                id_repuesto: r.id_repuesto,
-                cantidad: r.cantidad,
-                unidad: r.unidad || "Unidad",
+            repuestosUtilizados: decrementados.map((d) => ({
+                id_repuesto: d.id_repuesto,
+                cantidad: d.cantidadUtilizada,
+                unidad: d.unidad,
+                cantidadStock: d.cantidadStock,
+                unidadStock: d.unidadStock,
             })),
             responsables,
         });
@@ -74,8 +81,10 @@ const save = async (req, res, next) => {
         const movimientos = decrementados.map((d) => ({
             repuesto: d.id_repuesto,
             tipo: "egreso",
-            cantidad: d.cantidadUtilizada,
-            unidad: d.unidad,
+            cantidad: d.cantidadStock,
+            unidad: d.unidadStock,
+            cantidadInformada: d.cantidadUtilizada,
+            unidadInformada: d.unidad,
             motivo: "correctivo",
             referencia: nuevoCorrectivo._id.toString(),
             usuario: solicitante,
@@ -89,7 +98,7 @@ const save = async (req, res, next) => {
         // Rollback: restaurar los decrementos realizados antes del fallo
         for (const d of decrementados) {
             await Repuesto.findByIdAndUpdate(d.id_repuesto, {
-                $inc: { cantidad: d.cantidadUtilizada },
+                $inc: { cantidad: d.cantidadStock },
             }).catch(() => {});
         }
         next(error);
@@ -136,23 +145,31 @@ const deleteCorrectivo = async (req, res, next) => {
         }
 
         const movimientos = [];
-        for (const { id_repuesto, cantidad, unidad = "Unidad" } of correctivoExistente.repuestosUtilizados || []) {
+        for (const consumo of correctivoExistente.repuestosUtilizados || []) {
+            const { id_repuesto, cantidad, unidad = "Unidad" } = consumo;
             if (!id_repuesto || !cantidad) continue;
+            const repuestoId = id_repuesto._id || id_repuesto;
+            const repuestoPrevio = await Repuesto.findById(repuestoId).lean();
+            if (!repuestoPrevio) continue;
+            const unidadStock = consumo.unidadStock || repuestoPrevio.unidadStock || "Unidad";
+            const cantidadStock = consumo.cantidadStock ?? convertirAUnidadStock(cantidad, unidad, unidadStock);
             const restaurado = await Repuesto.findByIdAndUpdate(
-                id_repuesto,
-                { $inc: { cantidad } },
+                repuestoId,
+                { $inc: { cantidad: cantidadStock } },
                 { new: true }
             );
             if (restaurado) {
                 movimientos.push({
-                    repuesto: id_repuesto,
+                    repuesto: repuestoId,
                     tipo: "ingreso",
-                    cantidad,
-                    unidad,
+                    cantidad: cantidadStock,
+                    unidad: unidadStock,
+                    cantidadInformada: cantidad,
+                    unidadInformada: unidad,
                     motivo: "correctivo",
                     referencia: req.params.id,
                     usuario: correctivoExistente.solicitante,
-                    stockAnterior: restaurado.cantidad - cantidad,
+                    stockAnterior: restaurado.cantidad - cantidadStock,
                     stockResultante: restaurado.cantidad,
                 });
             }
@@ -184,19 +201,27 @@ const update = async (req, res, next) => {
 
         if (nuevosRepuestos) {
             // 1. Reintegrar al stock las cantidades previamente descontadas por este correctivo
-            for (const { id_repuesto, cantidad, unidad = "Unidad" } of correctivoExistente.repuestosUtilizados || []) {
+            for (const consumo of correctivoExistente.repuestosUtilizados || []) {
+                const { id_repuesto, cantidad, unidad = "Unidad" } = consumo;
                 if (!id_repuesto || !cantidad) continue;
+                const repuestoId = id_repuesto._id || id_repuesto;
+                const repuestoPrevio = await Repuesto.findById(repuestoId).lean();
+                if (!repuestoPrevio) continue;
+                const unidadStock = consumo.unidadStock || repuestoPrevio.unidadStock || "Unidad";
+                const cantidadStock = consumo.cantidadStock ?? convertirAUnidadStock(cantidad, unidad, unidadStock);
                 const restaurado = await Repuesto.findByIdAndUpdate(
-                    id_repuesto,
-                    { $inc: { cantidad } },
+                    repuestoId,
+                    { $inc: { cantidad: cantidadStock } },
                     { new: true }
                 );
                 if (restaurado) {
                     restaurados.push({
-                        id_repuesto,
+                        id_repuesto: repuestoId,
                         cantidad,
                         unidad,
-                        stockAnterior: restaurado.cantidad - cantidad,
+                        cantidadStock,
+                        unidadStock,
+                        stockAnterior: restaurado.cantidad - cantidadStock,
                         stockResultante: restaurado.cantidad,
                     });
                 }
@@ -212,10 +237,12 @@ const update = async (req, res, next) => {
                     if (!repuestoPrevio) {
                         throw Object.assign(new Error(`Repuesto ${id_repuesto} no encontrado`), { statusCode: 404 });
                     }
+                    const unidadStock = repuestoPrevio.unidadStock || "Unidad";
+                    const cantidadStock = convertirAUnidadStock(cantidadUtilizada, unidad, unidadStock);
 
                     const actualizado = await Repuesto.findOneAndUpdate(
-                        { _id: id_repuesto, cantidad: { $gte: cantidadUtilizada } },
-                        { $inc: { cantidad: -cantidadUtilizada } },
+                        { _id: id_repuesto, cantidad: { $gte: cantidadStock } },
+                        { $inc: { cantidad: -cantidadStock } },
                         { new: true }
                     );
 
@@ -229,27 +256,37 @@ const update = async (req, res, next) => {
                     decrementados.push({
                         id_repuesto,
                         cantidadUtilizada,
+                        cantidadStock,
                         stockAnterior: repuestoPrevio.cantidad,
                         stockResultante: actualizado.cantidad,
                         nombreRepuesto: repuestoPrevio.nombre,
                         unidad,
+                        unidadStock,
                     });
                 }
             } catch (error) {
                 // Rollback de los nuevos decrementos ya aplicados
                 for (const d of decrementados) {
                     await Repuesto.findByIdAndUpdate(d.id_repuesto, {
-                        $inc: { cantidad: d.cantidadUtilizada },
+                        $inc: { cantidad: d.cantidadStock },
                     }).catch(() => {});
                 }
                 // Deshacer la reintegración previa para dejar el stock como estaba
                 for (const r of restaurados) {
                     await Repuesto.findByIdAndUpdate(r.id_repuesto, {
-                        $inc: { cantidad: -r.cantidad },
+                        $inc: { cantidad: -r.cantidadStock },
                     }).catch(() => {});
                 }
                 throw error;
             }
+
+            req.body.repuestosUtilizados = decrementados.map((d) => ({
+                id_repuesto: d.id_repuesto,
+                cantidad: d.cantidadUtilizada,
+                unidad: d.unidad,
+                cantidadStock: d.cantidadStock,
+                unidadStock: d.unidadStock,
+            }));
         }
 
         const correctivo = await Correctivo.updateOne({ _id: req.params.id }, req.body, { multi: false });
@@ -258,8 +295,10 @@ const update = async (req, res, next) => {
             ...restaurados.map((r) => ({
                 repuesto: r.id_repuesto,
                 tipo: "ingreso",
-                cantidad: r.cantidad,
-                unidad: r.unidad,
+                cantidad: r.cantidadStock,
+                unidad: r.unidadStock,
+                cantidadInformada: r.cantidad,
+                unidadInformada: r.unidad,
                 motivo: "correctivo",
                 referencia: req.params.id,
                 usuario: correctivoExistente.solicitante,
@@ -269,8 +308,10 @@ const update = async (req, res, next) => {
             ...decrementados.map((d) => ({
                 repuesto: d.id_repuesto,
                 tipo: "egreso",
-                cantidad: d.cantidadUtilizada,
-                unidad: d.unidad,
+                cantidad: d.cantidadStock,
+                unidad: d.unidadStock,
+                cantidadInformada: d.cantidadUtilizada,
+                unidadInformada: d.unidad,
                 motivo: "correctivo",
                 referencia: req.params.id,
                 usuario: correctivoExistente.solicitante,
