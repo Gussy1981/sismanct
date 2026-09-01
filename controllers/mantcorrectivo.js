@@ -367,9 +367,9 @@ const getKPIs = async (req, res, next) => {
             });
         }
 
-        // MTTR general (promedio de tiempo en horas)
-        const totalHoras = correctivos.reduce((acc, c) => acc + (c.tiempo || 0), 0);
-        const mttrGeneral = parseFloat((totalHoras / correctivos.length).toFixed(2));
+        // El tiempo se registra en minutos; el KPI se devuelve en horas sin redondeo prematuro.
+        const totalMinutos = correctivos.reduce((acc, c) => acc + (Number(c.tiempo) || 0), 0);
+        const mttrGeneral = totalMinutos / correctivos.length / 60;
 
         // MTTR por equipo
         const porEquipoMap = {};
@@ -381,7 +381,7 @@ const getKPIs = async (req, res, next) => {
         const porEquipo = Object.entries(porEquipoMap)
             .map(([equipo, { total, count }]) => ({
                 equipo,
-                mttr: parseFloat((total / count).toFixed(2)),
+                mttr: total / count / 60,
                 totalCorrectivos: count,
             }))
             .sort((a, b) => b.totalCorrectivos - a.totalCorrectivos)

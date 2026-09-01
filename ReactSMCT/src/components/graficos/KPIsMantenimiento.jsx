@@ -5,6 +5,22 @@ import { Global } from "../../helpers/Global";
 const KPIsMantenimiento = () => {
     const [kpis, setKpis] = useState(null);
     const [loading, setLoading] = useState(true);
+    const formatearHoras = (valor) => {
+        const numero = Number(valor);
+        if (!Number.isFinite(numero) || numero < 0) return "0:00:00";
+
+        // El KPI llega con el formato H,MMSS... (por ejemplo, 1,491176).
+        // Se toman MM y SS, y se normalizan los posibles acarreos.
+        const [horasTexto, decimales = ""] = numero.toFixed(6).split(".");
+        const minutos = Number(decimales.slice(0, 2).padEnd(2, "0"));
+        const segundos = Number(decimales.slice(2, 4).padEnd(2, "0"));
+        const totalSegundos = Number(horasTexto) * 3600 + minutos * 60 + segundos;
+        const horas = Math.floor(totalSegundos / 3600);
+        const minutosNormalizados = Math.floor((totalSegundos % 3600) / 60);
+        const segundosNormalizados = totalSegundos % 60;
+
+        return `${horas}:${String(minutosNormalizados).padStart(2, "0")}:${String(segundosNormalizados).padStart(2, "0")}`;
+    };
 
     useEffect(() => {
         const fetchKPIs = async () => {
@@ -36,7 +52,7 @@ const KPIsMantenimiento = () => {
                             MTTR General
                         </p>
                         <p className="fw-bold mb-0" style={{ fontSize: "2rem", color: "#0e7490" }}>
-                            {kpis.mttrGeneral} <span style={{ fontSize: "1rem" }}>min</span>
+                            {formatearHoras(kpis.mttrGeneral)} <span style={{ fontSize: "1rem" }}>Hs</span>
                         </p>
                         <p className="text-muted" style={{ fontSize: "0.75rem" }}>
                             Tiempo medio de reparación
@@ -68,7 +84,7 @@ const KPIsMantenimiento = () => {
                                 <tr>
                                     <th>Equipo</th>
                                     <th className="text-center">Correctivos</th>
-                                    <th className="text-center">MTTR (min)</th>
+                                    <th className="text-center">MTTR (Hs)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,7 +92,7 @@ const KPIsMantenimiento = () => {
                                     <tr key={e.equipo}>
                                         <td>{e.equipo}</td>
                                         <td className="text-center">{e.totalCorrectivos}</td>
-                                        <td className="text-center fw-semibold">{e.mttr}</td>
+                                        <td className="text-center fw-semibold">{formatearHoras(e.mttr)}</td>
                                     </tr>
                                 ))}
                             </tbody>
