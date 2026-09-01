@@ -8,7 +8,7 @@ const BitacoraSchema = Schema({
   },
   fecha: {
     type: Date,
-    default: () => DateTime.now().startOf('day').toJSDate()
+    default: () => DateTime.now().setZone("America/Argentina/Buenos_Aires").startOf('day').toJSDate()
   }
 });
 

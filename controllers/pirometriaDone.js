@@ -1,13 +1,14 @@
 const RegistroPirometria = require('../models/pirometriaDone');
 const Pirometria = require('../models/pirometria');
 const { DateTime } = require("luxon");
+const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
 // Controlador para crear un nuevo registro
 const save = async (req, res) => {
   try {
     const { numColumnas, numFilas, columnas, equipo, responsable, resultado, vistoBueno, pirometroPatron, termocuplaPatron,observaciones } = req.body;
     const Id = req.body._id;
-    const fechaControl = DateTime.now();
+    const fechaControl = DateTime.now().setZone(ARGENTINA_ZONE);
     const pirometria = await Pirometria.findById(Id);
 
     if (!pirometria) {
@@ -75,7 +76,7 @@ const updatePiroDone = async (req, res, next) => {
       // El reloj de 3 meses para el próximo control recién arranca cuando el
       // control queda validado como OK, no cuando se cargaron los datos
       if (registroActualizado.resultado === "OK") {
-        const proximoControl = DateTime.now().plus({ months: 3 }).toJSDate();
+        const proximoControl = DateTime.now().setZone(ARGENTINA_ZONE).plus({ months: 3 }).toJSDate();
 
         registroActualizado.proximoControl = proximoControl;
         await registroActualizado.save();

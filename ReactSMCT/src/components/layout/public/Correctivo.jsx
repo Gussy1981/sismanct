@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { getCorrectivo } from "../../configuracion/api";
 import { DataTable } from "mantine-datatable";
-import { DateTime } from "luxon";
+import { formatDateOnly } from "../../../helpers/dateOnly";
 
 const Correctivo = () => {
   const [correctivos, setCorrectivos] = useState([]);
@@ -37,7 +37,7 @@ const Correctivo = () => {
   const columns = [
     {
       accessor: "fecha", title: "Fecha", sortable: true,
-      render: ({ fecha }) => DateTime.fromISO(fecha).toFormat("dd-MM-yyyy"),
+      render: ({ fecha }) => formatDateOnly(fecha),
     },
     { accessor: "equipo",      title: "Equipo",      sortable: true },
     { accessor: "solicitante", title: "Solicitante" },

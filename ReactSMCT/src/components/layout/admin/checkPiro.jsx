@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { DataTable } from "mantine-datatable";
 import { MdOutlineFactCheck } from "react-icons/md";
 import { DateTime } from "luxon";
+import { ARGENTINA_TIME_ZONE } from "../../../helpers/dateOnly";
 import FormAltaPirometria from "../../forms/FormAltaPirometria";
 
 const checkPiro = () => {
@@ -38,7 +39,7 @@ const checkPiro = () => {
     { accessor: "equipo",      title: "Equipo" },
     {
       accessor: "fechaControl", title: "Fecha",
-      render: ({ fechaControl }) => DateTime.fromISO(fechaControl).toFormat("dd-MM-yyyy"),
+      render: ({ fechaControl }) => DateTime.fromISO(fechaControl).setZone(ARGENTINA_TIME_ZONE).toFormat("dd-MM-yyyy"),
     },
     { accessor: "responsable", title: "Responsable" },
     {

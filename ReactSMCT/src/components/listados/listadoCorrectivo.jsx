@@ -3,7 +3,7 @@ import { getCorrectivo, deleteCorrectivo } from "../configuracion/api";
 import FormCorrectivo from "../forms/FormMantCorrectivo";
 import CorrectivoOffcanvas from "../correctivo/CorrectivoOffcanvas";
 import { DataTable } from "mantine-datatable";
-import { DateTime } from "luxon";
+import { formatDateOnly } from "../../helpers/dateOnly";
 import Swal from "sweetalert2";
 import { MdDelete, MdEditDocument } from "react-icons/md";
 import { FcViewDetails } from "react-icons/fc";
@@ -13,10 +13,10 @@ const listadoCorrectivo = ({ pedido }) => {
   const [correctivos, setCorrectivos] = useState([]);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [repuestoSelect, setRepuestoSelect] = useState(false);
-  const [mode, setMode] = useState("");
+  const [mode, setMode] = useState(pedido ? "Add" : "");
   const [correctivoToModify, setCorrectivoToModify] = useState("");
-  const [selection, setSelection] = useState(false);
-  const [pedidoMant, setPedidoMant] = useState();
+  const [selection, setSelection] = useState(Boolean(pedido));
+  const [pedidoMant, setPedidoMant] = useState(pedido);
   const [sortStatus, setSortStatus] = useState({ columnAccessor: "fecha", direction: "desc" });
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,10 @@ const listadoCorrectivo = ({ pedido }) => {
 
   useEffect(() => {
     setPedidoMant(pedido);
-    if (pedido) setMode("Add");
+    if (pedido) {
+      setMode("Add");
+      setSelection(true);
+    }
   }, [pedido]);
 
   const sortedCorrectivos = useMemo(() => {
@@ -53,7 +56,7 @@ const listadoCorrectivo = ({ pedido }) => {
   }, [correctivos, sortStatus]);
 
   const handleChange = (option) => { setMode("Edit"); setCorrectivoToModify(option); setSelection(true); };
-  const handleAdd = () => { setSelection(true); setMode("Add"); };
+  const handleAdd = () => { setPedidoMant(undefined); setSelection(true); setMode("Add"); };
   const handleBack = () => { setSelection(false); setMode(""); };
   const updateCorrectivoList = () => fetchData(searchTerm);
   const updateOk = () => { setSelection(false); setMode(""); };
@@ -78,7 +81,7 @@ const listadoCorrectivo = ({ pedido }) => {
   const columns = [
     {
       accessor: "fecha", title: "Fecha", sortable: true,
-      render: ({ fecha }) => DateTime.fromISO(fecha).toFormat("dd-MM-yyyy"),
+      render: ({ fecha }) => formatDateOnly(fecha),
     },
     { accessor: "equipo",      title: "Equipo",      sortable: true },
     { accessor: "solicitante", title: "Solicitante" },

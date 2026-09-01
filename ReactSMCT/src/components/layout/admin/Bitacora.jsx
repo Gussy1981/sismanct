@@ -10,7 +10,7 @@ import Highlight from "@tiptap/extension-highlight";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import { DateTime } from "luxon";
+import { formatDateOnly, toDateInputValue } from "../../../helpers/dateOnly";
 
 const stripHtml = (html) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -89,15 +89,11 @@ const Bitacora = () => {
       }
       // Filtro por fecha desde
       if (dateFrom) {
-        const from = DateTime.fromISO(dateFrom).startOf("day");
-        const entryDate = DateTime.fromISO(entry.fecha);
-        if (entryDate < from) return false;
+        if (toDateInputValue(entry.fecha) < dateFrom) return false;
       }
       // Filtro por fecha hasta
       if (dateTo) {
-        const to = DateTime.fromISO(dateTo).endOf("day");
-        const entryDate = DateTime.fromISO(entry.fecha);
-        if (entryDate > to) return false;
+        if (toDateInputValue(entry.fecha) > dateTo) return false;
       }
       return true;
     });
@@ -207,7 +203,7 @@ const Bitacora = () => {
                   <li className="text-sm text-gray-400 italic">Sin resultados.</li>
                 ) : (
                   filteredEntries.map((entry) => {
-                    const fechaFormateada = DateTime.fromISO(entry.fecha).toFormat("dd-MM-yyyy");
+                    const fechaFormateada = formatDateOnly(entry.fecha);
                     const plain = stripHtml(entry.content || "");
                     const excerpt = getExcerpt(plain, searchTerm);
                     const isSelected = selectedEntry?._id === entry._id;

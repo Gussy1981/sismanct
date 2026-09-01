@@ -6,7 +6,12 @@ const RepuestosSchema = Schema({
         ref: "Repuesto",
         autopopulate: true
     },
-    cantidad: Number
+    cantidad: Number,
+    unidad: {
+        type: String,
+        enum: ["Unidad", "Grs", "Kgs"],
+        default: "Unidad"
+    }
 })
 
 const CorrectivoSchema = Schema({

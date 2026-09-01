@@ -47,6 +47,7 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
                 <th>Nombre</th>
                 <th>Marca</th>
                 <th>Cantidad</th>
+                <th>Unidad</th>
                 <th>Precio Individual</th>
                 <th>Subtotal</th>
               </tr>
@@ -57,6 +58,7 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
                 <td>{repuesto.id_repuesto.nombre}</td>
                 <td>{repuesto.id_repuesto.marca}</td>
                 <td>{repuesto.cantidad}</td>
+                <td>{repuesto.unidad || "Unidad"}</td>
                 <td>{repuesto.id_repuesto.precio}</td>
                 <td>{repuesto.cantidad * repuesto.id_repuesto.precio}</td>
               </tr>

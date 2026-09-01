@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { DateTime } from "luxon";
+import { ARGENTINA_TIME_ZONE } from "../../helpers/dateOnly";
 
 const exportToPDF = (values, dataEquipo) => {
 
@@ -77,11 +78,11 @@ const exportToPDF = (values, dataEquipo) => {
   const esquema = rutaCompleta.startsWith("/uploads/")
     ? rutaCompleta
     : "/" + rutaCompleta.split(/[\\/]/).pop();
-  const fechaDoneFormated = DateTime.fromISO(values.fechaControl).toFormat("dd-MM-yyyy");
+  const fechaDoneFormated = DateTime.fromISO(values.fechaControl).setZone(ARGENTINA_TIME_ZONE).toFormat("dd-MM-yyyy");
   const responsable = values.responsable;
   const aprobo = values.vistoBueno;
   const equipo = values.equipo;
-  const proximaFecha = DateTime.fromISO(values.proximoControl).setLocale("es").toFormat("MMMM yyyy");
+  const proximaFecha = DateTime.fromISO(values.proximoControl).setZone(ARGENTINA_TIME_ZONE).setLocale("es").toFormat("MMMM yyyy");
   const pirometro = values.pirometroPatron;
   const termocupla = values.termocuplaPatron;
   const observaciones = values.observaciones;
@@ -169,7 +170,7 @@ const exportToPDF = (values, dataEquipo) => {
   
 
   // Guardar el PDF con nombre identificable: <equipo>_<mes>_<año>.pdf
-  const mesControl = DateTime.fromISO(values.fechaControl).setLocale("es").toFormat("MMMM_yyyy");
+  const mesControl = DateTime.fromISO(values.fechaControl).setZone(ARGENTINA_TIME_ZONE).setLocale("es").toFormat("MMMM_yyyy");
   const nombreArchivo = `${equipo}_${mesControl}.pdf`;
   doc.save(nombreArchivo);
 };

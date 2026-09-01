@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DataTable } from "mantine-datatable";
 import Swal from "sweetalert2";
 import { Global } from "../../helpers/Global";
-import { DateTime } from "luxon";
+import { formatDateOnly } from "../../helpers/dateOnly";
 
 const TareasNoCumplidas = ({ tareas, onComplete }) => {
   const [noTareas, setNoTareas] = useState([]);
@@ -64,7 +64,7 @@ const TareasNoCumplidas = ({ tareas, onComplete }) => {
     { accessor: "task.frecuencia", title: "Frecuencia" },
     {
       accessor: "fechaDone", title: "Fecha",
-      render: ({ fechaDone }) => DateTime.fromISO(fechaDone).toFormat("dd-MM-yyyy"),
+      render: ({ fechaDone }) => formatDateOnly(fechaDone),
     },
     {
       accessor: "accion", title: "", textAlign: "center",

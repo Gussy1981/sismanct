@@ -2,6 +2,7 @@ const TaskDone    = require("../models/taskdone");
 const TaskNotDone = require("../models/taskNotDone");
 const TaskToDo    = require("../models/tasktodo");
 const { DateTime } = require("luxon");
+const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
 // ── Calendar helpers ──────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ const debeMostrarseHoy = (task, hoy) => {
   if (!esDiaHabil(hoy))    return false;
 
   const ultima = task.ultimaEjecucion
-    ? DateTime.fromJSDate(task.ultimaEjecucion).startOf("day")
+    ? DateTime.fromJSDate(task.ultimaEjecucion).setZone(ARGENTINA_ZONE).startOf("day")
     : null;
 
   switch (task.frecuencia) {
@@ -95,9 +96,9 @@ const crearTaskNotDoneSiNoExiste = async (taskId, encargado, fechaDone) => {
 const detectarMisadas = async (task, hoy) => {
   if (!task.fechaConsulta) return;
 
-  const activacion = DateTime.fromJSDate(task.fechaConsulta).startOf("day");
+  const activacion = DateTime.fromJSDate(task.fechaConsulta).setZone(ARGENTINA_ZONE).startOf("day");
   const ultima = task.ultimaEjecucion
-    ? DateTime.fromJSDate(task.ultimaEjecucion).startOf("day")
+    ? DateTime.fromJSDate(task.ultimaEjecucion).setZone(ARGENTINA_ZONE).startOf("day")
     : null;
 
   switch (task.frecuencia) {
@@ -183,7 +184,7 @@ const listbyuser = async (req, res, next) => {
   try {
     const encargado = req.user.id;
     const tasks  = await TaskToDo.find({ encargado });
-    const hoy    = DateTime.local().startOf("day");
+    const hoy    = DateTime.now().setZone(ARGENTINA_ZONE).startOf("day");
     const visibles = tasks.filter((t) => debeMostrarseHoy(t, hoy));
     res.status(200).json({ status: "Success", tasks: visibles });
   } catch (error) {
@@ -195,7 +196,7 @@ const listbyuser = async (req, res, next) => {
 const listAll = async (req, res, next) => {
   try {
     const tasks  = await TaskToDo.find({});
-    const hoy    = DateTime.local().startOf("day");
+    const hoy    = DateTime.now().setZone(ARGENTINA_ZONE).startOf("day");
     const visibles = tasks.filter((t) => debeMostrarseHoy(t, hoy));
     res.status(200).json({ status: "Success", tasks: visibles });
   } catch (error) {
@@ -207,7 +208,7 @@ const listAll = async (req, res, next) => {
 const listbyequipo = async (req, res, next) => {
   try {
     const tasks  = await TaskToDo.find({ equipo: req.params.id });
-    const hoy    = DateTime.local().startOf("day");
+    const hoy    = DateTime.now().setZone(ARGENTINA_ZONE).startOf("day");
     const visibles = [];
 
     for (const task of tasks) {
@@ -254,7 +255,7 @@ const cumplirTarea = async (req, res, next) => {
       }
     }
 
-    const hoy = DateTime.local();
+    const hoy = DateTime.now().setZone(ARGENTINA_ZONE);
     await new TaskDone({
       task: Id,
       fechaDone: hoy.toISODate(),
@@ -297,7 +298,7 @@ const updateFechaConsulta = async (req, res, next) => {
       tarea.ultimaEjecucion = null;
       tarea.estado         = false;
     } else {
-      tarea.fechaConsulta = DateTime.local().toJSDate();
+      tarea.fechaConsulta = DateTime.now().setZone(ARGENTINA_ZONE).toJSDate();
     }
 
     await tarea.save();

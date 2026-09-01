@@ -1,6 +1,9 @@
 const Correctivo = require("../models/mantcorrectivo");
 const Repuesto = require("../models/repuesto");
 const MovimientoStock = require("../models/movimientoStock");
+const { DateTime } = require("luxon");
+
+const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
 const save = async (req, res, next) => {
     const {
@@ -19,7 +22,8 @@ const save = async (req, res, next) => {
     try {
         // Decrementar stock de forma atómica: solo si cantidad >= cantidadUtilizada
         for (const repuestoInfo of repuestosUtilizados) {
-            const { id_repuesto, cantidad: cantidadUtilizada } = repuestoInfo;
+            const { id_repuesto, unidad = "Unidad" } = repuestoInfo;
+            const cantidadUtilizada = Number(repuestoInfo.cantidad);
 
             const repuestoPrevio = await Repuesto.findById(id_repuesto).lean();
             if (!repuestoPrevio) {
@@ -45,6 +49,7 @@ const save = async (req, res, next) => {
                 stockAnterior: repuestoPrevio.cantidad,
                 stockResultante: actualizado.cantidad,
                 nombreRepuesto: repuestoPrevio.nombre,
+                unidad,
             });
         }
 
@@ -59,6 +64,7 @@ const save = async (req, res, next) => {
             repuestosUtilizados: repuestosUtilizados.map((r) => ({
                 id_repuesto: r.id_repuesto,
                 cantidad: r.cantidad,
+                unidad: r.unidad || "Unidad",
             })),
             responsables,
         });
@@ -69,6 +75,7 @@ const save = async (req, res, next) => {
             repuesto: d.id_repuesto,
             tipo: "egreso",
             cantidad: d.cantidadUtilizada,
+            unidad: d.unidad,
             motivo: "correctivo",
             referencia: nuevoCorrectivo._id.toString(),
             usuario: solicitante,
@@ -97,7 +104,7 @@ const findByMotivo = async (req, res, next) => {
             .exec();
         const formattedCorrectivos = correctivos.map((c) => ({
             ...c._doc,
-            createdAt: new Date(c.createdAt).toLocaleDateString(),
+            createdAt: DateTime.fromJSDate(c.createdAt).setZone(ARGENTINA_ZONE).toFormat("dd/MM/yyyy"),
         }));
         res.status(200).json(formattedCorrectivos);
     } catch (error) {
@@ -113,7 +120,7 @@ const findMotivoByEquipo = async (req, res, next) => {
             equipo: c.equipo,
             motivo: c.motivo,
             responsable: c.responsable,
-            fecha: c.createdAt.toLocaleDateString(),
+            fecha: DateTime.fromJSDate(c.createdAt).setZone(ARGENTINA_ZONE).toFormat("dd/MM/yyyy"),
         }));
         res.status(200).json(resultado);
     } catch (error) {
@@ -129,7 +136,7 @@ const deleteCorrectivo = async (req, res, next) => {
         }
 
         const movimientos = [];
-        for (const { id_repuesto, cantidad } of correctivoExistente.repuestosUtilizados || []) {
+        for (const { id_repuesto, cantidad, unidad = "Unidad" } of correctivoExistente.repuestosUtilizados || []) {
             if (!id_repuesto || !cantidad) continue;
             const restaurado = await Repuesto.findByIdAndUpdate(
                 id_repuesto,
@@ -141,6 +148,7 @@ const deleteCorrectivo = async (req, res, next) => {
                     repuesto: id_repuesto,
                     tipo: "ingreso",
                     cantidad,
+                    unidad,
                     motivo: "correctivo",
                     referencia: req.params.id,
                     usuario: correctivoExistente.solicitante,
@@ -176,7 +184,7 @@ const update = async (req, res, next) => {
 
         if (nuevosRepuestos) {
             // 1. Reintegrar al stock las cantidades previamente descontadas por este correctivo
-            for (const { id_repuesto, cantidad } of correctivoExistente.repuestosUtilizados || []) {
+            for (const { id_repuesto, cantidad, unidad = "Unidad" } of correctivoExistente.repuestosUtilizados || []) {
                 if (!id_repuesto || !cantidad) continue;
                 const restaurado = await Repuesto.findByIdAndUpdate(
                     id_repuesto,
@@ -187,6 +195,7 @@ const update = async (req, res, next) => {
                     restaurados.push({
                         id_repuesto,
                         cantidad,
+                        unidad,
                         stockAnterior: restaurado.cantidad - cantidad,
                         stockResultante: restaurado.cantidad,
                     });
@@ -196,7 +205,8 @@ const update = async (req, res, next) => {
             // 2. Descontar del stock las nuevas cantidades utilizadas, de forma atómica
             try {
                 for (const repuestoInfo of nuevosRepuestos) {
-                    const { id_repuesto, cantidad: cantidadUtilizada } = repuestoInfo;
+                    const { id_repuesto, unidad = "Unidad" } = repuestoInfo;
+                    const cantidadUtilizada = Number(repuestoInfo.cantidad);
 
                     const repuestoPrevio = await Repuesto.findById(id_repuesto).lean();
                     if (!repuestoPrevio) {
@@ -222,6 +232,7 @@ const update = async (req, res, next) => {
                         stockAnterior: repuestoPrevio.cantidad,
                         stockResultante: actualizado.cantidad,
                         nombreRepuesto: repuestoPrevio.nombre,
+                        unidad,
                     });
                 }
             } catch (error) {
@@ -248,6 +259,7 @@ const update = async (req, res, next) => {
                 repuesto: r.id_repuesto,
                 tipo: "ingreso",
                 cantidad: r.cantidad,
+                unidad: r.unidad,
                 motivo: "correctivo",
                 referencia: req.params.id,
                 usuario: correctivoExistente.solicitante,
@@ -258,6 +270,7 @@ const update = async (req, res, next) => {
                 repuesto: d.id_repuesto,
                 tipo: "egreso",
                 cantidad: d.cantidadUtilizada,
+                unidad: d.unidad,
                 motivo: "correctivo",
                 referencia: req.params.id,
                 usuario: correctivoExistente.solicitante,
@@ -335,15 +348,15 @@ const getKPIs = async (req, res, next) => {
 
         // Correctivos por mes (últimos 6 meses)
         const seisMesesAtras = new Date();
-        seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 5);
-        seisMesesAtras.setDate(1);
-        seisMesesAtras.setHours(0, 0, 0, 0);
+        seisMesesAtras.setUTCMonth(seisMesesAtras.getUTCMonth() - 5);
+        seisMesesAtras.setUTCDate(1);
+        seisMesesAtras.setUTCHours(0, 0, 0, 0);
 
         const mesesMap = {};
         for (const c of correctivos) {
             const fecha = new Date(c.fecha || c.createdAt);
             if (fecha < seisMesesAtras) continue;
-            const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+            const key = `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth() + 1).padStart(2, "0")}`;
             mesesMap[key] = (mesesMap[key] || 0) + 1;
         }
         const ultimosMeses = Object.entries(mesesMap)

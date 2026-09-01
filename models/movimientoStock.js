@@ -15,7 +15,12 @@ const MovimientoStockSchema = Schema(
         cantidad: {
             type: Number,
             required: true,
-            min: 1,
+            min: 0.001,
+        },
+        unidad: {
+            type: String,
+            enum: ["Unidad", "Grs", "Kgs"],
+            default: "Unidad",
         },
         motivo: {
             type: String,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPedidoMantNotDone } from "../configuracion/api";
 import { DataTable } from "mantine-datatable";
-import { DateTime } from "luxon";
+import { formatDateOnly } from "../../helpers/dateOnly";
 
 const listadoPedidosMant = () => {
   const [pedidos, setPedidos] = useState({});
@@ -19,7 +19,7 @@ const listadoPedidosMant = () => {
     { accessor: "equipo",      title: "Equipo" },
     {
       accessor: "fecha", title: "Fecha",
-      render: ({ fecha }) => DateTime.fromISO(fecha).toFormat("dd-MM-yyyy"),
+      render: ({ fecha }) => formatDateOnly(fecha),
     },
     { accessor: "motivo",    title: "Motivo" },
     { accessor: "condicion", title: "Condición" },

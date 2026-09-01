@@ -1,6 +1,7 @@
 const Pirometria = require("../models/pirometria");
 const RegistroPirometria = require("../models/pirometriaDone");
 const { DateTime } = require("luxon");
+const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
 // Controlador para crear un nuevo registro de pirometria
 const save = async (req, res, next) => {
@@ -73,8 +74,8 @@ const listByInicio = async (req, res) => {
         pirometria.estado &&
         pirometria.proximoControl
       ) {
-        const hoy = DateTime.local().startOf("day");
-        const nextControl = DateTime.fromJSDate(pirometria.proximoControl).startOf("day");
+        const hoy = DateTime.now().setZone(ARGENTINA_ZONE).startOf("day");
+        const nextControl = DateTime.fromJSDate(pirometria.proximoControl).setZone(ARGENTINA_ZONE).startOf("day");
           if (hoy >= nextControl) {
             pirometriasToReturn.push(pirometria);
           }

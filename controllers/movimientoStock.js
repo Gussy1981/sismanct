@@ -1,5 +1,8 @@
 const MovimientoStock = require("../models/movimientoStock");
 const Correctivo = require("../models/mantcorrectivo");
+const { DateTime } = require("luxon");
+
+const ARGENTINA_ZONE = "America/Argentina/Buenos_Aires";
 
 const listAll = async (req, res, next) => {
     try {
@@ -21,11 +24,9 @@ const kpiCriticos = async (req, res, next) => {
         const { desde, hasta } = req.query;
 
         const filtroFecha = {};
-        if (desde) filtroFecha.$gte = new Date(desde);
+        if (desde) filtroFecha.$gte = DateTime.fromISO(desde, { zone: ARGENTINA_ZONE }).startOf("day").toJSDate();
         if (hasta) {
-            const hastaFin = new Date(hasta);
-            hastaFin.setHours(23, 59, 59, 999);
-            filtroFecha.$lte = hastaFin;
+            filtroFecha.$lte = DateTime.fromISO(hasta, { zone: ARGENTINA_ZONE }).endOf("day").toJSDate();
         }
         const filtro = Object.keys(filtroFecha).length ? { createdAt: filtroFecha } : {};
 

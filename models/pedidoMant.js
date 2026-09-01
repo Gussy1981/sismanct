@@ -6,7 +6,7 @@ const PedidoMantSchema = Schema({
     equipo: String,
     fecha: {
         type: Date,
-        default: () => DateTime.now().startOf('day').toJSDate()
+        default: () => DateTime.now().setZone("America/Argentina/Buenos_Aires").startOf('day').toJSDate()
     },
     motivo: String,
     condicion: {

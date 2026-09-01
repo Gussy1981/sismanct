@@ -9,8 +9,8 @@ const getTasksToDo = async (req, res) => {
           // Si la tarea debe ejecutarse hoy y no ha sido ejecutada todavía, la agregamos al arreglo de tareas a retornar
           tasksToReturn.push(task);
         } else if (task.debeEjecutarseHoy() && task.ultimaEjecucion) {
-          const hoy = DateTime.local();
-          const ultimaEjecucion = DateTime.fromJSDate(task.ultimaEjecucion);
+          const hoy = DateTime.now().setZone("America/Argentina/Buenos_Aires");
+          const ultimaEjecucion = DateTime.fromJSDate(task.ultimaEjecucion).setZone("America/Argentina/Buenos_Aires");
           const frecuencia = task.frecuencia;
           const diasFrecuencia = {
             Diaria: 1,

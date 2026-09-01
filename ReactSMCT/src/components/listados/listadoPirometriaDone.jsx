@@ -4,6 +4,7 @@ import { DataTable } from "mantine-datatable";
 import { MdArchive } from "react-icons/md";
 import exportToPDF from "../ExportToPDF/exportToPDF";
 import { DateTime } from "luxon";
+import { ARGENTINA_TIME_ZONE } from "../../helpers/dateOnly";
 
 const listadoPirometriaDone = () => {
   const [piroDone, setPiroDone] = useState([]);
@@ -32,7 +33,7 @@ const listadoPirometriaDone = () => {
     { accessor: "equipo",      title: "Equipo" },
     {
       accessor: "fechaControl", title: "Fecha",
-      render: ({ fechaControl }) => DateTime.fromISO(fechaControl).toFormat("dd-MM-yyyy"),
+      render: ({ fechaControl }) => DateTime.fromISO(fechaControl).setZone(ARGENTINA_TIME_ZONE).toFormat("dd-MM-yyyy"),
     },
     { accessor: "responsable", title: "Responsable" },
     { accessor: "resultado",   title: "Resultado" },

@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { DataTable } from "mantine-datatable";
 import ExportToExcel from "../ExportToExcel/ExportToExcel";
-import { DateTime } from "luxon";
+import { formatDateOnly } from "../../helpers/dateOnly";
 
 const TaskNotDoneTable = ({ taskNotDone }) => {
   const tableRef = useRef(null);
@@ -9,7 +9,7 @@ const TaskNotDoneTable = ({ taskNotDone }) => {
   const columns = [
     {
       accessor: "fechaDone", title: "Programado",
-      render: ({ fechaDone }) => DateTime.fromISO(fechaDone).toFormat("dd-MM-yyyy"),
+      render: ({ fechaDone }) => formatDateOnly(fechaDone),
     },
     { accessor: "task.equipo",    title: "Equipo" },
     { accessor: "task.tarea",     title: "Tarea" },
