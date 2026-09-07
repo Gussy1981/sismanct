@@ -5,6 +5,12 @@ import Swal from "sweetalert2";
 import * as Yup from "yup";
 import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
+const FRECUENCIAS_ANCLADAS = ["Trimestral", "Semestral", "Anual"];
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
   const [equipos, setEquipos]     = useState([]);
   const [tareas, setTareas]       = useState([]);
@@ -17,9 +23,7 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
     tarea:        mode === "Edit" ? taskToModify?.tarea      ?? "" : "",
     encargado:    mode === "Edit" ? taskToModify?.encargado  ?? "" : "",
     frecuencia:   mode === "Edit" ? taskToModify?.frecuencia ?? "Diaria" : "Diaria",
-    ultimaEjecucion: null,
-    estado: false,
-    fechaConsulta: null,
+    mesAncla:     mode === "Edit" ? taskToModify?.mesAncla   ?? "" : "",
   };
 
   const validationSchema = Yup.object({
@@ -27,6 +31,13 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
     tarea:     Yup.string().required("La tarea es obligatoria"),
     encargado: Yup.string().required("El encargado es obligatorio"),
     frecuencia:Yup.string().required("La frecuencia es obligatoria"),
+    mesAncla:  Yup.number().when("frecuencia", {
+      is: (f) => FRECUENCIAS_ANCLADAS.includes(f),
+      then: (s) => s.typeError("Elegí el mes de arranque")
+                    .required("El mes de arranque es obligatorio")
+                    .min(1).max(12),
+      otherwise: (s) => s.nullable().transform(() => null),
+    }),
   });
 
   const loadData = async () => {
@@ -43,6 +54,7 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
       let response;
       if (mode !== "Edit") {
         response = await savePreventivo(values);
+        updateTaskList?.();
       } else {
         response = await updateTarea(taskToModify._id, values);
         updateTaskList();
@@ -70,6 +82,7 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
+      {({ values }) => (
       <Form className="flex flex-col gap-4" onKeyDown={handleEnterAsTab}>
         <div>
           <label htmlFor="equipo" className="f-label">Equipo</label>
@@ -131,9 +144,25 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
             <option value="Semanal">Semanal</option>
             <option value="Quincenal">Quincenal</option>
             <option value="Mensual">Mensual</option>
+            <option value="Trimestral">Trimestral</option>
+            <option value="Semestral">Semestral</option>
+            <option value="Anual">Anual</option>
           </Field>
           <ErrorMessage name="frecuencia" component="p" className="f-error" />
         </div>
+
+        {FRECUENCIAS_ANCLADAS.includes(values.frecuencia) && (
+          <div>
+            <label htmlFor="mesAncla" className="f-label">Mes de arranque del ciclo</label>
+            <Field as="select" id="mesAncla" name="mesAncla" className="f-input">
+              <option value="">Selecciona un mes</option>
+              {MESES.map((m, i) => (
+                <option key={i + 1} value={i + 1}>{m}</option>
+              ))}
+            </Field>
+            <ErrorMessage name="mesAncla" component="p" className="f-error" />
+          </div>
+        )}
 
         <div>
           <button type="submit" className="btn-primary">
@@ -141,6 +170,7 @@ const FormTaskToDo = ({ mode, taskToModify, updateTaskList, updateOk }) => {
           </button>
         </div>
       </Form>
+      )}
     </Formik>
   );
 };

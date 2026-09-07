@@ -33,6 +33,7 @@ const TareasNoCumplidas = ({ tareas, onComplete }) => {
         '<option value="No tenia herramientas">No tenía herramientas</option>' +
         '<option value="Necesitaba repuestos que no habia">Necesitaba repuestos que no había</option>' +
         '<option value="No era prioridad">No era prioridad</option>' +
+        '<option value="Día feriado">Día feriado</option>' +
         "</select>",
       showCancelButton: true,
       confirmButtonText: "Continuar",

@@ -66,8 +66,8 @@ const Preventivo = () => {
       <div className="flex justify-center space-x-5 w-90">
       {Object.entries(tareasByEquipo).map(([equipo, tareas]) => {
 
-        const tareasTotales = tareas.length; //obtengo la cantidad de tareas en el arreglo
-        const tareasNoCumplidas = tareas.filter((task) => !task.estado).length; //obtengo la cantidad de tareas con estado false del arreglo
+        const tareasTotales = tareas.length; //cantidad de tareas activas del equipo
+        const tareasNoCumplidas = tareas.filter((task) => !task.alDia).length; //tareas pendientes en su período actual
         const tareasCumplidas = tareasTotales - tareasNoCumplidas; //diferencia para calcular las tareas cumplidas
         
         //defino variables de estilo para aplicar en el texto segun corresponda

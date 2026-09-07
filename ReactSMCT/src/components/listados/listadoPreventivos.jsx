@@ -6,6 +6,12 @@ import Preventivo from "../layout/public/Preventivo";
 import Swal from "sweetalert2";
 import { MdDelete, MdEditDocument, MdPlayCircle, MdStopCircle } from "react-icons/md";
 
+const MESES_CORTOS = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const frecuenciaLabel = (t) =>
+  ["Trimestral", "Semestral", "Anual"].includes(t.frecuencia) && t.mesAncla
+    ? `${t.frecuencia} · ${MESES_CORTOS[t.mesAncla]}`
+    : t.frecuencia;
+
 const listadoPreventivos = () => {
   const [taskToDo, setTaskToDo] = useState([]);
   const [selection, setSelection] = useState(false);
@@ -48,7 +54,7 @@ const listadoPreventivos = () => {
     { accessor: "equipo",    title: "Equipo" },
     { accessor: "tarea",     title: "Tarea" },
     { accessor: "encargado", title: "Encargado" },
-    { accessor: "frecuencia", title: "Frecuencia" },
+    { accessor: "frecuencia", title: "Frecuencia", render: (t) => frecuenciaLabel(t) },
     {
       accessor: "acciones", title: "", textAlign: "center",
       render: (equipo) => (
@@ -84,7 +90,7 @@ const listadoPreventivos = () => {
           <FormTaskToDo mode={mode} taskToModify={taskToModify} updateTaskList={updateTaskList} updateOk={updateOk} />
         );
       case "Add":
-        return <FormTaskToDo mode={menuOption} />;
+        return <FormTaskToDo mode={menuOption} updateTaskList={updateTaskList} />;
     }
   };
 

@@ -36,41 +36,87 @@ const mismaQuincena = (a, b) => {
 /** True when both fall in the same calendar month */
 const mismoMes = (a, b) => a.year === b.year && a.month === b.month;
 
-// ── Visibility logic ──────────────────────────────────────────────────────────
+// ── Anchored frequencies (Trimestral / Semestral / Anual) ─────────────────────
+
+/** Interval in months for the calendar-anchored frequencies */
+const INTERVALO_MESES = { Trimestral: 3, Semestral: 6, Anual: 12 };
+
+/** True when the frequency is anchored to a calendar month (needs mesAncla) */
+const esFrecuenciaAnclada = (frecuencia) => Boolean(INTERVALO_MESES[frecuencia]);
 
 /**
- * Should this task be shown to the operator today?
- * Rules:
- *  - Task must be activated (fechaConsulta !== null)
- *  - Never show on weekends
- *  - Diaria:    show every workday it has not been done today
- *  - Semanal:   show every workday until done once this ISO week
- *  - Quincenal: show every workday until done once this quincena
- *  - Mensual:   show every workday until done once this month
+ * Start (first day, 00:00) of the anchored period that contains `hoy`.
+ *
+ * A period boundary falls on every month `m` where
+ *   (m - mesAncla) mod intervalo === 0
+ * e.g. Semestral with mesAncla = March → boundaries in March and September.
  */
-const debeMostrarseHoy = (task, hoy) => {
-  if (!task.fechaConsulta) return false;
-  if (!esDiaHabil(hoy))    return false;
+const inicioPeriodoAnclado = (hoy, intervalo, mesAncla) => {
+  const ancla = (((Number(mesAncla) || 1) - 1) % 12 + 12) % 12; // 0-based month
+  const totalMes = hoy.year * 12 + (hoy.month - 1);
+  const offset = ((totalMes - ancla) % intervalo + intervalo) % intervalo;
+  const inicioTotal = totalMes - offset;
+  return DateTime.fromObject(
+    {
+      year: Math.floor(inicioTotal / 12),
+      month: (inicioTotal % 12) + 1,
+      day: 1,
+    },
+    { zone: ARGENTINA_ZONE }
+  ).startOf("day");
+};
 
-  const ultima = task.ultimaEjecucion
-    ? DateTime.fromJSDate(task.ultimaEjecucion).setZone(ARGENTINA_ZONE).startOf("day")
-    : null;
+// ── Period status ────────────────────────────────────────────────────────────
+
+/**
+ * Has the task already been completed within its current period?
+ * Pure period math — ignores weekends and activation, so it can drive both the
+ * operator's "show today" view and the admin dashboard counters.
+ */
+const estaAlDia = (task, hoy) => {
+  if (!task.ultimaEjecucion) return false;
+
+  const ultima = DateTime.fromJSDate(task.ultimaEjecucion)
+    .setZone(ARGENTINA_ZONE)
+    .startOf("day");
 
   switch (task.frecuencia) {
     case "Diaria":
-      return !ultima || !hoy.hasSame(ultima, "day");
+      return hoy.hasSame(ultima, "day");
     case "Semanal":
-      return !ultima || !mismaSemanaISO(hoy, ultima);
+      return mismaSemanaISO(hoy, ultima);
     case "Quincenal":
-      return !ultima || !mismaQuincena(hoy, ultima);
+      return mismaQuincena(hoy, ultima);
     case "Mensual":
-      return !ultima || !mismoMes(hoy, ultima);
+      return mismoMes(hoy, ultima);
+    case "Trimestral":
+    case "Semestral":
+    case "Anual": {
+      const intervalo = INTERVALO_MESES[task.frecuencia];
+      const inicio = inicioPeriodoAnclado(hoy, intervalo, task.mesAncla);
+      return ultima >= inicio;
+    }
     default:
       return false;
   }
 };
 
-// ── TaskNotDone dedup ─────────────────────────────────────────────────────────
+// ── Visibility logic ─────────────────────────────────────────────────────────
+
+/**
+ * Should this task be shown to the operator today?
+ *  - Task must be activated (fechaConsulta !== null)
+ *  - Never show on weekends
+ *  - Otherwise: show every workday until it has been done in its current period
+ *    (day / ISO week / quincena / calendar month / anchored quarter-half-year)
+ */
+const debeMostrarseHoy = (task, hoy) => {
+  if (!task.fechaConsulta) return false;
+  if (!esDiaHabil(hoy))    return false;
+  return !estaAlDia(task, hoy);
+};
+
+// ── TaskNotDone dedup ────────────────────────────────────────────────────────
 
 const crearTaskNotDoneSiNoExiste = async (taskId, encargado, fechaDone) => {
   const fecha = DateTime.isDateTime(fechaDone) ? fechaDone.toISODate() : fechaDone;
@@ -86,7 +132,7 @@ const crearTaskNotDoneSiNoExiste = async (taskId, encargado, fechaDone) => {
   }
 };
 
-// ── Missed-period detection ───────────────────────────────────────────────────
+// ── Missed-period detection ──────────────────────────────────────────────────
 
 /**
  * Called when a task IS shown today.
@@ -154,6 +200,24 @@ const detectarMisadas = async (task, hoy) => {
       );
       break;
     }
+
+    case "Trimestral":
+    case "Semestral":
+    case "Anual": {
+      const intervalo      = INTERVALO_MESES[task.frecuencia];
+      const inicioActual   = inicioPeriodoAnclado(hoy, intervalo, task.mesAncla);
+      const inicioPrevio   = inicioActual.minus({ months: intervalo });
+      // No previous period if activated during the current one
+      if (activacion >= inicioActual) break;
+      // Done during the previous period?
+      if (ultima && ultima >= inicioPrevio && ultima < inicioActual) break;
+      await crearTaskNotDoneSiNoExiste(
+        task._id,
+        task.encargado,
+        primerDiaHabilDelMes(inicioPrevio)
+      );
+      break;
+    }
   }
 };
 
@@ -161,8 +225,14 @@ const detectarMisadas = async (task, hoy) => {
 
 const save = async (req, res, next) => {
   try {
-    const { equipo, tarea, encargado, frecuencia } = req.body;
-    const tareatodo = new TaskToDo({ equipo, tarea, encargado, frecuencia });
+    const { equipo, tarea, encargado, frecuencia, mesAncla } = req.body;
+    const tareatodo = new TaskToDo({
+      equipo,
+      tarea,
+      encargado,
+      frecuencia,
+      mesAncla: esFrecuenciaAnclada(frecuencia) ? Number(mesAncla) || null : null,
+    });
     const documento = await tareatodo.save();
     res.status(201).json({ status: "Success", message: "Registro Guardado", documento });
   } catch (error) {
@@ -192,13 +262,20 @@ const listbyuser = async (req, res, next) => {
   }
 };
 
-/** All tasks (admin view) — filtered to those visible today */
+/**
+ * Dashboard view — every activated task with its current-period status,
+ * so the front end can show meaningful "al día / pendientes" counters.
+ */
 const listAll = async (req, res, next) => {
   try {
-    const tasks  = await TaskToDo.find({});
+    const tasks  = await TaskToDo.find({ fechaConsulta: { $ne: null } });
     const hoy    = DateTime.now().setZone(ARGENTINA_ZONE).startOf("day");
-    const visibles = tasks.filter((t) => debeMostrarseHoy(t, hoy));
-    res.status(200).json({ status: "Success", tasks: visibles });
+    const conEstado = tasks.map((t) => ({
+      ...t.toObject(),
+      alDia: estaAlDia(t, hoy),
+      venceHoy: debeMostrarseHoy(t, hoy),
+    }));
+    res.status(200).json({ status: "Success", tasks: conEstado });
   } catch (error) {
     next(error);
   }
@@ -234,8 +311,8 @@ const listbytarea = async (_req, res, next) => {
 
 /**
  * Mark a task as completed.
- * For Diaria tasks, blocks completion until all unresolved TaskNotDone
- * records are justified (motivoEstado: true).
+ * Blocks completion — for any frequency — while the task still has
+ * unresolved TaskNotDone records (motivoEstado: false) to justify.
  */
 const cumplirTarea = async (req, res, next) => {
   const Id = req.params.id;
@@ -245,14 +322,12 @@ const cumplirTarea = async (req, res, next) => {
     const task = await TaskToDo.findById(Id);
     if (!task) return res.status(404).json({ message: "Tarea no encontrada" });
 
-    if (task.frecuencia === "Diaria") {
-      const pendientes = await TaskNotDone.countDocuments({ task: Id, motivoEstado: false });
-      if (pendientes > 0) {
-        return res.status(403).json({
-          status: "Error",
-          message: "Debe justificar las tareas no cumplidas antes de continuar",
-        });
-      }
+    const pendientes = await TaskNotDone.countDocuments({ task: Id, motivoEstado: false });
+    if (pendientes > 0) {
+      return res.status(403).json({
+        status: "Error",
+        message: "Debe justificar las tareas no cumplidas antes de continuar",
+      });
     }
 
     const hoy = DateTime.now().setZone(ARGENTINA_ZONE);
@@ -275,10 +350,19 @@ const cumplirTarea = async (req, res, next) => {
   }
 };
 
+/**
+ * Edit a task. Whitelisted fields only — never touches fechaConsulta /
+ * ultimaEjecucion / estado, and clears mesAncla when the frequency is no
+ * longer a calendar-anchored one.
+ */
 const update = async (req, res, next) => {
   try {
-    const tarea = await TaskToDo.updateOne({ _id: req.params.id }, req.body);
-    res.status(200).json({ status: "Success", message: "Registro modificado correctamente", tarea });
+    const { equipo, tarea, encargado, frecuencia, mesAncla } = req.body;
+    const campos = { equipo, tarea, encargado, frecuencia };
+    campos.mesAncla = esFrecuenciaAnclada(frecuencia) ? Number(mesAncla) || null : null;
+
+    const tareaMod = await TaskToDo.updateOne({ _id: req.params.id }, { $set: campos });
+    res.status(200).json({ status: "Success", message: "Registro modificado correctamente", tarea: tareaMod });
   } catch (error) {
     next(error);
   }
@@ -287,6 +371,7 @@ const update = async (req, res, next) => {
 /**
  * Toggle task activation: null → today (admin activates), date → null (deactivates).
  * Resetting ultimaEjecucion and estado on deactivation ensures clean state on re-activation.
+ * On activation, an anchored task without mesAncla inherits the current month.
  */
 const updateFechaConsulta = async (req, res, next) => {
   try {
@@ -298,7 +383,11 @@ const updateFechaConsulta = async (req, res, next) => {
       tarea.ultimaEjecucion = null;
       tarea.estado         = false;
     } else {
-      tarea.fechaConsulta = DateTime.now().setZone(ARGENTINA_ZONE).toJSDate();
+      const ahora = DateTime.now().setZone(ARGENTINA_ZONE);
+      tarea.fechaConsulta = ahora.toJSDate();
+      if (esFrecuenciaAnclada(tarea.frecuencia) && !tarea.mesAncla) {
+        tarea.mesAncla = ahora.month;
+      }
     }
 
     await tarea.save();
