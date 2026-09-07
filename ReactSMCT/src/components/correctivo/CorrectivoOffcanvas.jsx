@@ -6,13 +6,17 @@ const CorrectivoOffcanvas = ({ show, handleCloseOffcanvas, repuestoSelect }) => 
 
   console.log("Desde OffCanvas", repuestoSelect);
 
+  // Factor de cada unidad respecto de la base de su magnitud (masa: Grs, volumen: Lts, longitud: Mts).
+  const FACTOR_UNIDAD = { Unidad: 1, Grs: 1, Kgs: 1000, Lts: 1, Mts: 1 };
+
   const cantidadEnUnidadStock = (repuesto) => {
     if (repuesto.cantidadStock != null) return repuesto.cantidadStock;
     const unidadStock = repuesto.id_repuesto?.unidadStock || repuesto.unidad || "Unidad";
     const unidadInformada = repuesto.unidad || "Unidad";
     if (unidadStock === unidadInformada) return repuesto.cantidad;
-    if (unidadStock === "Kgs" && unidadInformada === "Grs") return repuesto.cantidad / 1000;
-    if (unidadStock === "Grs" && unidadInformada === "Kgs") return repuesto.cantidad * 1000;
+    const factorInformada = FACTOR_UNIDAD[unidadInformada];
+    const factorStock = FACTOR_UNIDAD[unidadStock];
+    if (factorInformada && factorStock) return (repuesto.cantidad * factorInformada) / factorStock;
     return repuesto.cantidad;
   };
 

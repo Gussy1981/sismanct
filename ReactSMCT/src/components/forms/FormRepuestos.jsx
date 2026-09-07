@@ -5,6 +5,8 @@ import { getEquipos, saveRepuestos, updateRepuesto } from "../configuracion/api"
 import Swal from "sweetalert2";
 import { handleEnterAsTab } from "../../helpers/formKeyboard";
 
+const UNIDADES_STOCK = ["Unidad", "Grs", "Kgs", "Lts", "Mts"];
+
 const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
   const [equipos, setEquipos] = useState([]);
 
@@ -38,7 +40,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
       .test("entero-unidad", "La cantidad debe ser entera para Unidad", function (value) {
         return this.parent.unidadStock !== "Unidad" || Number.isInteger(value);
       }),
-    unidadStock: Yup.string().oneOf(["Unidad", "Grs", "Kgs"]).required("La unidad es obligatoria"),
+    unidadStock: Yup.string().oneOf(UNIDADES_STOCK).required("La unidad es obligatoria"),
     minStock: Yup.number().positive().required("El stock mínimo es obligatorio")
       .test("entero-unidad", "El stock mínimo debe ser entero para Unidad", function (value) {
         return this.parent.unidadStock !== "Unidad" || Number.isInteger(value);
@@ -96,9 +98,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
           <div>
             <label htmlFor="unidadStock" className="f-label">Unidad de stock</label>
             <Field as="select" id="unidadStock" name="unidadStock" className="f-input">
-              <option value="Unidad">Unidad</option>
-              <option value="Grs">Grs</option>
-              <option value="Kgs">Kgs</option>
+              {UNIDADES_STOCK.map((u) => <option key={u} value={u}>{u}</option>)}
             </Field>
             <ErrorMessage name="unidadStock" component="p" className="f-error" />
           </div>

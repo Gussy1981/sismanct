@@ -6,6 +6,16 @@ import Swal from "sweetalert2";
 import { handleEnterAsTab } from "../../helpers/formKeyboard";
 import { toDateInputValue } from "../../helpers/dateOnly";
 
+const UNIDADES_STOCK = ["Unidad", "Grs", "Kgs", "Lts", "Mts"];
+// Unidades de consumo compatibles con cada unidad de stock (misma magnitud).
+const UNIDADES_POR_STOCK = {
+  Unidad: ["Unidad"],
+  Grs: ["Grs", "Kgs"],
+  Kgs: ["Grs", "Kgs"],
+  Lts: ["Lts"],
+  Mts: ["Mts"],
+};
+
 const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
   const [repuestos,    setRepuestos]    = useState([]);
   const [users,        setUsers]        = useState([]);
@@ -35,7 +45,7 @@ const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
     repuestosUtilizados: Yup.array().of(Yup.object({
       id_repuesto: Yup.string().required("Seleccioná un repuesto"),
       cantidad: Yup.number().typeError("Ingresá una cantidad").positive("La cantidad debe ser mayor que 0").required("Ingresá una cantidad"),
-      unidad: Yup.string().oneOf(["Unidad", "Grs", "Kgs"]).required(),
+      unidad: Yup.string().oneOf(UNIDADES_STOCK).required(),
     })),
   });
 
@@ -76,7 +86,7 @@ const FormCorrectivo = ({ mode, option, updateList, updateOk, pedidoMant }) => {
   const equipoPedidoNoCatalogado = pedidoMant?.equipo && !fetchEquipos.some((eq) => eq.codigo === pedidoMant.equipo);
   const unidadesDisponibles = (repuestoId) => {
     const unidadStock = repuestos.find((r) => r._id === repuestoId)?.unidadStock || "Unidad";
-    return unidadStock === "Unidad" ? ["Unidad"] : ["Grs", "Kgs"];
+    return UNIDADES_POR_STOCK[unidadStock] || ["Unidad"];
   };
 
   return (

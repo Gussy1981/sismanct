@@ -4,6 +4,7 @@ const { body } = require("express-validator");
 const CorrectivoController = require("../controllers/mantcorrectivo");
 const check = require("../middlewares/auth");
 const validate = require("../middlewares/validate");
+const { UNIDADES } = require("../services/stockUnits");
 
 const correcitivoRules = [
     body("equipo").trim().notEmpty().withMessage("El equipo es obligatorio"),
@@ -19,8 +20,8 @@ const correcitivoRules = [
         .isFloat({ gt: 0 })
         .withMessage("La cantidad de cada repuesto debe ser mayor que 0"),
     body("repuestosUtilizados.*.unidad")
-        .isIn(["Unidad", "Grs", "Kgs"])
-        .withMessage("La unidad debe ser Unidad, Grs o Kgs"),
+        .isIn(UNIDADES)
+        .withMessage(`La unidad debe ser una de: ${UNIDADES.join(", ")}`),
 ];
 
 //defino rutas

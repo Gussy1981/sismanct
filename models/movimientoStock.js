@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const { UNIDADES } = require("../services/stockUnits");
 
 const MovimientoStockSchema = Schema(
     {
@@ -19,13 +20,13 @@ const MovimientoStockSchema = Schema(
         },
         unidad: {
             type: String,
-            enum: ["Unidad", "Grs", "Kgs"],
+            enum: UNIDADES,
             default: "Unidad",
         },
         cantidadInformada: Number,
         unidadInformada: {
             type: String,
-            enum: ["Unidad", "Grs", "Kgs"],
+            enum: UNIDADES,
         },
         motivo: {
             type: String,

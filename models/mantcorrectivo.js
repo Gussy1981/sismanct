@@ -1,4 +1,5 @@
 const {Schema, model} = require("mongoose");
+const { UNIDADES } = require("../services/stockUnits");
 
 const RepuestosSchema = Schema({
     id_repuesto:{
@@ -9,13 +10,13 @@ const RepuestosSchema = Schema({
     cantidad: Number,
     unidad: {
         type: String,
-        enum: ["Unidad", "Grs", "Kgs"],
+        enum: UNIDADES,
         default: "Unidad"
     },
     cantidadStock: Number,
     unidadStock: {
         type: String,
-        enum: ["Unidad", "Grs", "Kgs"]
+        enum: UNIDADES
     }
 })
 

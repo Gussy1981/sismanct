@@ -1,4 +1,5 @@
 const {Schema, model} = require("mongoose");
+const { UNIDADES } = require("../services/stockUnits");
 
 const RepuestoSchema = Schema({
     nombre: {
@@ -15,7 +16,7 @@ const RepuestoSchema = Schema({
     },
     unidadStock: {
         type: String,
-        enum: ["Unidad", "Grs", "Kgs"],
+        enum: UNIDADES,
         default: "Unidad",
     },
     minStock: {
