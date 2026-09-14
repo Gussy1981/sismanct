@@ -56,6 +56,7 @@ const update = async (req, res, next) => {
   try {
     let repuesto = await Repuesto.updateOne({ _id: req.params.id }, req.body, {
       multi: false,
+      runValidators: true,
     });
     res.json({
       status: "Success",
@@ -63,12 +64,13 @@ const update = async (req, res, next) => {
       repuesto,
     });
   } catch (error) {
-    res.send({
+    res.status(error.code === 11000 ? 409 : 400).send({
       status: "Error",
-      message: "Error al modificar registro",
+      message: error.code === 11000
+        ? "Ya existe un repuesto con ese nombre"
+        : "Error al modificar registro",
       error,
     });
-    next(error);
   }
 };
 

@@ -73,7 +73,7 @@ const listadoRepuestos = () => {
     { accessor: "otras",    title: "Otras características" },
     { accessor: "cantidad", title: "Cantidad", render: (r) => `${r.cantidad} ${r.unidadStock || "Unidad"}` },
     { accessor: "minStock", title: "Stock mín.", render: (r) => `${r.minStock} ${r.unidadStock || "Unidad"}` },
-    { accessor: "precio",   title: "Precio", render: (r) => `${r.precio} / ${r.unidadStock || "Unidad"}` },
+    { accessor: "precio",   title: "Precio", render: (r) => `${r.precio || 0}` },
     {
       accessor: "criticidad",
       title: "Criticidad",

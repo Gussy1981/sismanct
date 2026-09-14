@@ -533,6 +533,7 @@ export const saveRepuestos = async (values) => {
     return response.data;
   } catch (error) {
     console.log(error);
+    return error.response?.data;
   }
 };
 
@@ -573,13 +574,14 @@ export const updateRepuesto = async (repuestoId, values) =>{
       Global.url + "repuesto/update/" + id,
       values,
       {
-        headers: headers, 
+        headers: headers,
       }
     );
       console.log("Respuesta de axios.put", response);
-      return response
+      return response.data
   } catch (error) {
     console.log(error);
+    return error.response?.data;
   };
 
 }
