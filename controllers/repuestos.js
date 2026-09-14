@@ -16,18 +16,19 @@ const save = async (req, res, next) => {
       criticidad: req.body.criticidad,
     });
     let documento = await repuesto.save();
-    res.send({
+    res.status(201).send({
       status: "Success",
       message: "Registro Guardado",
       documento,
     });
   } catch (error) {
-    res.send({
+    res.status(error.code === 11000 ? 409 : 400).send({
       status: "Error",
-      message: "Error al crear registro",
+      message: error.code === 11000
+        ? "Ya existe un repuesto con ese nombre"
+        : "Error al crear registro",
       error,
     });
-    next(error);
   }
 };
 

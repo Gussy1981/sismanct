@@ -55,13 +55,24 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
       const response = mode === "Edit"
         ? await updateRepuesto(repuesto._id, values)
         : await saveRepuestos(values);
-      if (mode === "Edit") updateOk();
-      if (response) {
-        await Swal.fire({ icon: "success", title: "Operación exitosa", showConfirmButton: false, timer: 1500 });
-        resetForm();
-        updateRepuestoList();
+
+      if (!response || response.status !== "Success") {
+        await Swal.fire({
+          icon: "error",
+          title: "No se pudo guardar",
+          text: response?.message || "Ocurrió un error al comunicarse con el servidor",
+        });
+        return;
       }
-    } catch (error) { console.log(error); }
+
+      if (mode === "Edit") updateOk();
+      await Swal.fire({ icon: "success", title: "Operación exitosa", showConfirmButton: false, timer: 1500 });
+      resetForm();
+      updateRepuestoList();
+    } catch (error) {
+      console.log(error);
+      await Swal.fire({ icon: "error", title: "No se pudo guardar", text: "Ocurrió un error inesperado" });
+    }
   };
 
   return (
@@ -104,7 +115,7 @@ const FormRepuesto = ({ mode, repuesto, updateRepuestoList, updateOk }) => {
           </div>
           <div>
             <label htmlFor="minStock" className="f-label">Stock mínimo</label>
-            <Field type="number" min="0.001" step={values.unidadStock === "Unidad" ? "1" : "any"} id="minStock" name="minStock" className="f-input" />
+            <Field type="number" min={values.unidadStock === "Unidad" ? "1" : "0.001"} step={values.unidadStock === "Unidad" ? "1" : "any"} id="minStock" name="minStock" className="f-input" />
             <ErrorMessage name="minStock" component="p" className="f-error" />
           </div>
           <div>
